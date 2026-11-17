@@ -68,12 +68,30 @@ docker-compose.yml
 7. Testy (jednostkowe + testy procesów) i dane do rozdziału 4 dokumentacji (wykresy, wnioski).
 8. Opis architektury do rozdziału 3 dokumentacji (diagram komponentów, lista serwisów i endpointów API).
 
+## Plan etapu III
+Szczegółowy plan (job type, wiadomości, DMN, ML, algorytm, API, ekrany, kamienie milowe): **`docs/PLAN_ETAP3.md`**. Status modeli: `bpmn/README.md`.
+
 ## Podział pracy
-(do uzupełnienia po ustaleniu – kto odpowiada za które foldery/procesy; pracujemy na osobnych gałęziach i robimy Pull Requesty do `main`)
+- **Ilia Smakovskyi** – backend (Spring Boot), Camunda, baza danych, procesy P1 i P3.
+- **Robert Kłusek** – serwis ML (Python), proces P2, frontend.
+- Razem – kontrakty API, DMN, testy, dokumentacja.
+Pracujemy na osobnych gałęziach i robimy Pull Requesty do `main`; drugi autor przegląda PR.
+
+## Camunda – serwer uczelniany
+- Adres od prowadzącego (Operate na porcie 8080), logowanie basic: login `2026_nazwisko_imie` (bez polskich znaków), hasło = numer albumu.
+- Adres, login i hasło trzymamy **tylko w `.env`** (szablon: `.env.example`).
+- Wersja Camundy na serwerze – **jeszcze nieznana** (czekamy na prowadzącego); od niej zależy wersja `camunda-spring-boot-starter`.
+- Do czasu odpowiedzi pracujemy lokalnie na Camunda 8 Run.
+
+## Skille Claude Code (`.claude/skills/`)
+- `git-commit` – commity w stylu Conventional Commits (typ po angielsku, np. `feat(p1):`, opis po polsku – reguła repozytorium ma pierwszeństwo),
+- `ui-ux-pro-max` – wskazówki UI/UX przy frontendzie,
+- `requesting-code-review` – przegląd kodu przed PR do `main`.
+Instalacja/odtworzenie: `npx skills experimental_install` (wersje w `skills-lock.json`).
 
 ## Zasady pracy
 - Przed większą zmianą najpierw pokaż plan i poczekaj na akceptację.
-- **Nie zmieniaj logiki procesów** względem modeli w `bpmn/modele-etap2/`. Jeśli coś w modelu nie da się wykonać w Camunda 8, opisz problem i zaproponuj minimalną zmianę.
+- **Nie zmieniaj modeli** w `bpmn/modele-etap2/` – P1–P3 są zatwierdzone przez prowadzącego. W `bpmn/wykonywalne/` wolno dodać tylko ustawienia techniczne (job type, wiadomości, correlation key, warunki bramek, formularze) – bez nowych elementów, timerów brzegowych ani multi-instance. To, czego brakuje na diagramie, a jest w opisie procesu, robimy w kodzie (patrz `docs/PLAN_ETAP3.md`, sekcja 2).
 - Nazwy elementów BPMN, wiadomości i zadań – po polsku, tak jak w modelach. Identyfikatory w kodzie – po angielsku.
 - **Nigdy nie commituj haseł ani danych dostępowych** (np. Client ID / Secret do serwera Camunda). Trzymaj je w `.env`, który jest w `.gitignore`; w repo tylko `.env.example`.
 - Po każdym kroku krótko wyjaśnij, co zostało zrobione i jak to uruchomić – autorzy muszą to rozumieć na obronie.
