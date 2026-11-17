@@ -87,7 +87,10 @@ Pracujemy na osobnych gałęziach i robimy Pull Requesty do `main`; drugi autor 
 ## Skille Claude Code (`.claude/skills/`)
 - `git-commit` – commity w stylu Conventional Commits (typ po angielsku, np. `feat(p1):`, opis po polsku – reguła repozytorium ma pierwszeństwo),
 - `ui-ux-pro-max` – wskazówki UI/UX przy frontendzie,
-- `requesting-code-review` – przegląd kodu przed PR do `main`.
+- `requesting-code-review` – przegląd kodu przed PR do `main`,
+- `brainstorming` – doprecyzowanie pomysłu i wymagań przed implementacją nowej funkcji,
+- `test-driven-development` – testy najpierw (JUnit 5 / pytest), potem kod,
+- `systematic-debugging` – systematyczne szukanie przyczyny błędu zamiast zgadywania.
 Instalacja/odtworzenie: `npx skills experimental_install` (wersje w `skills-lock.json`).
 
 ## Zasady pracy
