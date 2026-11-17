@@ -324,7 +324,7 @@ Tabele (Flyway):
 | `audyt` | czas, aktor, proces, akcja, szczegóły (JSON) – wymaganie „pełna rejestrowalność decyzji” |
 
 Wdrażanie do Camundy: backend przy starcie wdraża pliki z `bpmn/wykonywalne/`, `bpmn/wykonywalne/forms/` i `dmn/` (Maven kopiuje je do zasobów – jedno źródło prawdy).
-Połączenie: lokalnie Camunda 8 Run **albo** serwer uczelniany (dane w `.env`, logowanie basic). Wersję Camundy na serwerze uczelnianym ustalamy, gdy prowadzący odpisze – od niej zależy wersja biblioteki `camunda-spring-boot-starter`.
+Połączenie: lokalnie Camunda 8 Run **albo** serwer uczelniany (dane w `.env`, logowanie basic). Serwer uczelniany działa na Camundzie **8.9.0** (1 broker, 1 partycja), dlatego używamy `camunda-spring-boot-starter` w wersji **8.9.x**; dostęp jest możliwy bez VPN.
 
 ---
 
@@ -445,6 +445,6 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 
 ## 12. Otwarte sprawy
 
-- [ ] **Wersja Camundy na serwerze uczelnianym** – czekamy na odpowiedź prowadzącego.
-- [ ] Serwer uczelniany nie odpowiada spoza uczelni – sprawdzić, czy potrzebny jest VPN.
+- [x] **Wersja Camundy na serwerze uczelnianym** – 8.9.0 (ustalone z topologii klastra).
+- [x] Dostęp do serwera uczelnianego – działa bez VPN.
 - [ ] Akceptacja P4 i P5 → wtedy osobny plan.

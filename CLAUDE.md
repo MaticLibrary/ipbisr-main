@@ -80,8 +80,9 @@ Pracujemy na osobnych gałęziach i robimy Pull Requesty do `main`; drugi autor 
 ## Camunda – serwer uczelniany
 - Adres od prowadzącego (Operate na porcie 8080), logowanie basic: login `2026_nazwisko_imie` (bez polskich znaków), hasło = numer albumu.
 - Adres, login i hasło trzymamy **tylko w `.env`** (szablon: `.env.example`).
-- Wersja Camundy na serwerze – **jeszcze nieznana** (czekamy na prowadzącego); od niej zależy wersja `camunda-spring-boot-starter`.
-- Do czasu odpowiedzi pracujemy lokalnie na Camunda 8 Run.
+- Wersja Camundy na serwerze: **8.9.0** (potwierdzone przez topologię klastra: 1 broker, 1 partycja, gateway 8.9.0); `camunda-spring-boot-starter` dobieramy w wersji **8.9.x**.
+- Serwer jest dostępny **bez VPN** (sprawdzone 2026-11-17).
+- Lokalnie możemy używać Camunda 8 Run w wersji 8.9, żeby środowisko pasowało do serwera.
 
 ## Skille Claude Code (`.claude/skills/`)
 - `git-commit` – commity w stylu Conventional Commits (typ po angielsku, np. `feat(p1):`, opis po polsku – reguła repozytorium ma pierwszeństwo),
