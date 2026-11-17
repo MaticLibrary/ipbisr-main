@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Rejestr_defs" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.52.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
+<bpmn:collaboration id="Rejestr_collab"><bpmn:participant id="Pool_REJ" name="Rejestr ludności" processRef="Proces_Rejestr_ludnosci" /></bpmn:collaboration>
+<bpmn:process id="Proces_Rejestr_ludnosci" name="Rejestr ludności – udostępnianie danych" isExecutable="true">
+<bpmn:startEvent id="R_S" name="Otrzymano zapytanie o dane"><bpmn:messageEventDefinition id="R_S_m" messageRef="Msg_Zap" /></bpmn:startEvent>
+<bpmn:serviceTask id="R_T1" name="Odczytaj dane mieszkańców z ewidencji"><bpmn:extensionElements><zeebe:taskDefinition type="odczytaj-dane-mieszkancow" /></bpmn:extensionElements><bpmn:property id="R_T1_p" name="__targetRef_placeholder" /><bpmn:dataInputAssociation id="R_DIA"><bpmn:sourceRef>R_DS</bpmn:sourceRef><bpmn:targetRef>R_T1_p</bpmn:targetRef></bpmn:dataInputAssociation></bpmn:serviceTask>
+<bpmn:endEvent id="R_E" name="Dane wysłane"><bpmn:extensionElements><zeebe:taskDefinition type="wyslij-dane-mieszkancow" /></bpmn:extensionElements><bpmn:messageEventDefinition id="R_E_m" /></bpmn:endEvent>
+<bpmn:dataStoreReference id="R_DS" name="Ewidencja ludności" />
+<bpmn:sequenceFlow id="R_F1" sourceRef="R_S" targetRef="R_T1" />
+<bpmn:sequenceFlow id="R_F2" sourceRef="R_T1" targetRef="R_E" />
+</bpmn:process>
+<bpmn:message id="Msg_Zap" name="Zapytanie o dane" />
+<bpmndi:BPMNDiagram id="D1"><bpmndi:BPMNPlane id="PL1" bpmnElement="Rejestr_collab">
+<bpmndi:BPMNShape id="Pool_REJ_di" bpmnElement="Pool_REJ" isHorizontal="true"><dc:Bounds x="160" y="40" width="560" height="200" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="R_S_di" bpmnElement="R_S"><dc:Bounds x="232" y="102" width="36" height="36" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="R_T1_di" bpmnElement="R_T1"><dc:Bounds x="330" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="R_DS_di" bpmnElement="R_DS"><dc:Bounds x="355" y="170" width="50" height="50" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="R_E_di" bpmnElement="R_E"><dc:Bounds x="492" y="102" width="36" height="36" /></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="R_F1_di" bpmnElement="R_F1"><di:waypoint x="268" y="120" /><di:waypoint x="330" y="120" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="R_F2_di" bpmnElement="R_F2"><di:waypoint x="430" y="120" /><di:waypoint x="492" y="120" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="R_DIA_di" bpmnElement="R_DIA"><di:waypoint x="380" y="170" /><di:waypoint x="380" y="160" /></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>

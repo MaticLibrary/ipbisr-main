@@ -1,0 +1,19 @@
+.env
+*.env
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+build/
+.gradle/
+.idea/
+.vscode/
+node_modules/
+*.log
+.DS_Store
+# Next.js
+.next/
+next-env.d.ts
+*.tsbuildinfo

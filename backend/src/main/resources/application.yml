@@ -1,0 +1,10 @@
+server:
+  port: ${BACKEND_PORT:8081}
+
+spring:
+  application:
+    name: ipbisr-backend
+
+# Adres serwisu ML (używany przez workery od etapu P2/P3)
+ml-service:
+  url: ${ML_SERVICE_URL:http://localhost:8000}

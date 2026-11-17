@@ -1,0 +1,44 @@
+# Uruchomienie: docker compose up -d --build
+# Camunda 8 NIE jest tutaj – używamy Camunda 8 Run (lokalnie) albo serwera uczelnianego (patrz README).
+services:
+  postgres:
+    image: postgres:16
+    container_name: ipbisr-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ipbisr}
+      POSTGRES_USER: ${POSTGRES_USER:-ipbisr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ipbisr}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ipbisr} -d ${POSTGRES_DB:-ipbisr}"]
+      interval: 5s
+      retries: 10
+
+  ml-service:
+    build: ./ml-service
+    container_name: ipbisr-ml
+    ports:
+      - "${ML_SERVICE_PORT:-8000}:8000"
+
+  backend:
+    build: ./backend
+    container_name: ipbisr-backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ML_SERVICE_URL: http://ml-service:8000
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ipbisr}
+    ports:
+      - "${BACKEND_PORT:-8081}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+
+volumes:
+  pgdata:

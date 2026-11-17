@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="P5_defs" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.52.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
+
+<bpmn:collaboration id="P5_c">
+<bpmn:participant id="Pool_OC" name="System ostrzegania obrony cywilnej" processRef="Proces_OC" />
+<bpmn:participant id="Pool_CK5" name="Centrum kryzysowe – Obsługa sytuacji nadzwyczajnych" processRef="Proces_Nadzwyczajne" />
+<bpmn:participant id="C_P2" name="P2 – Prognozowanie zapotrzebowania" />
+<bpmn:messageFlow id="P5_m0" name="Ostrzeżenie" sourceRef="O_E" targetRef="S1" />
+<bpmn:messageFlow id="P5_m1" name="Zmiana sytuacji kryzysowej" sourceRef="T3" targetRef="C_P2" />
+</bpmn:collaboration>
+<bpmn:process id="Proces_OC" name="System ostrzegania – wysłanie ostrzeżenia" isExecutable="false">
+<bpmn:startEvent id="O_S" name="Wykryto zagrożenie"></bpmn:startEvent>
+<bpmn:serviceTask id="O_T" name="Określ rodzaj i obszar zagrożenia"></bpmn:serviceTask>
+<bpmn:endEvent id="O_E" name="Ostrzeżenie wysłane"><bpmn:messageEventDefinition id="O_E_d" /></bpmn:endEvent>
+<bpmn:sequenceFlow id="O_S_O_T" name="" sourceRef="O_S" targetRef="O_T" />
+<bpmn:sequenceFlow id="O_T_O_E" name="" sourceRef="O_T" targetRef="O_E" />
+</bpmn:process>
+<bpmn:process id="Proces_Nadzwyczajne" name="Obsługa sytuacji nadzwyczajnych" isExecutable="true">
+<bpmn:laneSet id="Proces_Nadzwyczajne_ls">
+<bpmn:lane id="P5_SYS" name="System"><bpmn:flowNodeRef>S1</bpmn:flowNodeRef><bpmn:flowNodeRef>T1</bpmn:flowNodeRef><bpmn:flowNodeRef>G1</bpmn:flowNodeRef><bpmn:flowNodeRef>J1</bpmn:flowNodeRef><bpmn:flowNodeRef>T4</bpmn:flowNodeRef><bpmn:flowNodeRef>E1</bpmn:flowNodeRef></bpmn:lane>
+<bpmn:lane id="P5_ANA" name="Analityk kryzysowy"><bpmn:flowNodeRef>T2</bpmn:flowNodeRef><bpmn:flowNodeRef>T3</bpmn:flowNodeRef></bpmn:lane>
+</bpmn:laneSet>
+<bpmn:startEvent id="S1" name="Otrzymano ostrzeżenie"><bpmn:messageEventDefinition id="S1_d" /></bpmn:startEvent>
+<bpmn:businessRuleTask id="T1" name="Oceń poziom zagrożenia (DMN)"></bpmn:businessRuleTask>
+<bpmn:exclusiveGateway id="G1" name="Plany do zmiany?"></bpmn:exclusiveGateway>
+<bpmn:userTask id="T2" name="Zatwierdź ponowne planowanie"></bpmn:userTask>
+<bpmn:sendTask id="T3" name="Zleć nową prognozę zapotrzebowania"></bpmn:sendTask>
+<bpmn:exclusiveGateway id="J1" name=""></bpmn:exclusiveGateway>
+<bpmn:serviceTask id="T4" name="Opublikuj komunikaty dla mieszkańców"></bpmn:serviceTask>
+<bpmn:endEvent id="E1" name="Zdarzenie obsłużone"></bpmn:endEvent>
+<bpmn:sequenceFlow id="S1_T1" name="" sourceRef="S1" targetRef="T1" />
+<bpmn:sequenceFlow id="T1_G1" name="" sourceRef="T1" targetRef="G1" />
+<bpmn:sequenceFlow id="G1_J1" name="nie" sourceRef="G1" targetRef="J1" />
+<bpmn:sequenceFlow id="G1_T2" name="tak" sourceRef="G1" targetRef="T2" />
+<bpmn:sequenceFlow id="T2_T3" name="" sourceRef="T2" targetRef="T3" />
+<bpmn:sequenceFlow id="T3_J1" name="" sourceRef="T3" targetRef="J1" />
+<bpmn:sequenceFlow id="J1_T4" name="" sourceRef="J1" targetRef="T4" />
+<bpmn:sequenceFlow id="T4_E1" name="" sourceRef="T4" targetRef="E1" />
+</bpmn:process>
+<bpmndi:BPMNDiagram id="P5_d"><bpmndi:BPMNPlane id="P5_p" bpmnElement="P5_c">
+<bpmndi:BPMNShape id="Pool_OC_di" bpmnElement="Pool_OC" isHorizontal="true"><dc:Bounds x="160" y="40" width="1820" height="150" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="Pool_CK5_di" bpmnElement="Pool_CK5" isHorizontal="true"><dc:Bounds x="160" y="270" width="1820" height="300" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="P5_SYS_di" bpmnElement="P5_SYS" isHorizontal="true"><dc:Bounds x="190" y="270" width="1790" height="150" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="P5_ANA_di" bpmnElement="P5_ANA" isHorizontal="true"><dc:Bounds x="190" y="420" width="1790" height="150" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="C_P2_di" bpmnElement="C_P2" isHorizontal="true"><dc:Bounds x="160" y="650" width="1820" height="60" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="O_S_di" bpmnElement="O_S"><dc:Bounds x="232" y="97" width="36" height="36" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="O_T_di" bpmnElement="O_T"><dc:Bounds x="360" y="75" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="O_E_di" bpmnElement="O_E"><dc:Bounds x="552" y="97" width="36" height="36" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="S1_di" bpmnElement="S1"><dc:Bounds x="552" y="327" width="36" height="36" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="T1_di" bpmnElement="T1"><dc:Bounds x="680" y="305" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="G1_di" bpmnElement="G1" isMarkerVisible="true"><dc:Bounds x="865" y="320" width="50" height="50" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="T2_di" bpmnElement="T2"><dc:Bounds x="1000" y="455" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="T3_di" bpmnElement="T3"><dc:Bounds x="1160" y="455" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="J1_di" bpmnElement="J1" isMarkerVisible="true"><dc:Bounds x="1345" y="320" width="50" height="50" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="T4_di" bpmnElement="T4"><dc:Bounds x="1480" y="305" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="E1_di" bpmnElement="E1"><dc:Bounds x="1672" y="327" width="36" height="36" /></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="O_S_O_T_di" bpmnElement="O_S_O_T"><di:waypoint x="268" y="115" /><di:waypoint x="360" y="115" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="O_T_O_E_di" bpmnElement="O_T_O_E"><di:waypoint x="460" y="115" /><di:waypoint x="552" y="115" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="S1_T1_di" bpmnElement="S1_T1"><di:waypoint x="588" y="345" /><di:waypoint x="680" y="345" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="T1_G1_di" bpmnElement="T1_G1"><di:waypoint x="780" y="345" /><di:waypoint x="865" y="345" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="G1_J1_di" bpmnElement="G1_J1"><di:waypoint x="915" y="345" /><di:waypoint x="1345" y="345" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="G1_T2_di" bpmnElement="G1_T2"><di:waypoint x="890" y="370" /><di:waypoint x="890" y="495" /><di:waypoint x="1000" y="495" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="T2_T3_di" bpmnElement="T2_T3"><di:waypoint x="1100" y="495" /><di:waypoint x="1160" y="495" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="T3_J1_di" bpmnElement="T3_J1"><di:waypoint x="1260" y="495" /><di:waypoint x="1370" y="495" /><di:waypoint x="1370" y="370" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="J1_T4_di" bpmnElement="J1_T4"><di:waypoint x="1395" y="345" /><di:waypoint x="1480" y="345" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="T4_E1_di" bpmnElement="T4_E1"><di:waypoint x="1580" y="345" /><di:waypoint x="1672" y="345" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="P5_m0_di" bpmnElement="P5_m0"><di:waypoint x="570" y="133" /><di:waypoint x="570" y="327" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="P5_m1_di" bpmnElement="P5_m1"><di:waypoint x="1210" y="535" /><di:waypoint x="1210" y="650" /></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>
