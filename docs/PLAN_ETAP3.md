@@ -3,15 +3,19 @@
 > Dokument dla obu autorów. Czytamy go przed rozpoczęciem każdego kroku i odhaczamy zadania `[x]`.
 > Zakres: **P1, P2, P3** (zatwierdzone przez prowadzącego). P4 i P5 – dopiero po akceptacji.
 
-**Podział pracy**
+**Podział pracy** – każda rzecz ma jednego właściciela, nie ma zadań „wspólnych”.
 
-| Kto | Odpowiada za |
-|---|---|
-| **Ilia** | backend (Spring Boot), Camunda, baza danych, procesy **P1** i **P3** (workery + BPMN wykonywalne) |
-| **Robert** | serwis ML (Python), proces **P2** (workery + BPMN wykonywalne), **frontend** |
-| razem | kontrakty API (sekcja 7), DMN, testy, dokumentacja rozdziału 3 |
+| | **Ilia** | **Robert** |
+|---|---|---|
+| Część systemu | **backend** (Spring Boot) + **Camunda** + baza danych | **ml-service** (Python) + **cały frontend** (Next.js) |
+| Procesy | **P1** (P1a, P1b, P1c) i **P3** (P3a, P3b) – BPMN wykonywalne, workery, formularze | **P2** (P2a, P2b) – BPMN wykonywalne, workery, formularz |
+| Reguły / algorytmy | DMN `Priorytet_mieszkancow` | model ML (`/forecast`), algorytm LP (`/allocate`), dane syntetyczne |
+| API | REST backendu `/api/...` (sekcja 8) – Robert z niego korzysta we frontendzie | API serwisu ML (sekcja 8) – Ilia z niego korzysta w workerze P3 |
+| Testy | JUnit + Mockito, testy procesów P1 i P3 | pytest (ML, LP), testy procesu P2 |
+| Dokumentacja rozdz. 3 | architektura, Camunda, DMN, API backendu | model ML, algorytm LP, frontend |
 
-Każdy pracuje na swojej gałęzi (`ilia/p1-workery`, `robert/ml-forecast` …) i robi Pull Request do `main`. Drugi autor przegląda PR – dzięki temu obaj rozumiemy cały kod.
+Kto jest właścicielem API, ten opisuje je w sekcji 8 jako pierwszy i nie zmienia go bez uprzedzenia drugiej osoby.
+Każdy pracuje na swojej gałęzi (`ilia/...`, `robert/...`) i robi Pull Request do `main`; drugi autor tylko przegląda PR (żeby rozumieć cały kod na obronie).
 
 ---
 
@@ -218,7 +222,7 @@ Zużycie = znany wzór (np. woda rośnie z temperaturą, leki z % chorych, wszys
 
 ---
 
-## 7. Algorytm przydziału (P3) – rekomendacja: programowanie liniowe
+## 7. Algorytm przydziału (P3) – rekomendacja: programowanie liniowe (Robert – `/allocate` w ml-service; Ilia – worker P3, który go wywołuje)
 
 ### Dlaczego tak
 
@@ -257,9 +261,9 @@ Dla każdego budynku *b*, zasobu *r* i grupy priorytetu *p* (A/B/C) szukamy licz
 
 ---
 
-## 8. Kontrakty API (ustalamy RAZEM na początku – potem każdy pracuje niezależnie)
+## 8. Kontrakty API (opisane na początku – potem każdy pracuje niezależnie)
 
-### Serwis ML (port 8000)
+### Serwis ML (port 8000) – właściciel: Robert
 
 | Metoda | Ścieżka | Wejście | Wyjście |
 |---|---|---|---|
@@ -268,7 +272,7 @@ Dla każdego budynku *b*, zasobu *r* i grupy priorytetu *p* (A/B/C) szukamy licz
 | POST | `/allocate` | `{stany:[{zasob, ilosc}], potrzeby:[{budynekId, zasob, priorytet, ilosc}], prognozaA:[{zasob, ilosc}], punkty:[{id, przepustowoscKg, budynki:[…]}]}` | `{pozycje:[{budynekId, zasob, priorytet, przydzielono, potrzeba}], potrzebyKrytycznePokryte, niedobory:[{zasob, ilosc}], harmonogram:[…]}` |
 | GET | `/model/info` | – | metryki MAE/MAPE/R², data treningu |
 
-### Backend (port 8081, prefiks `/api`)
+### Backend (port 8081, prefiks `/api`) – właściciel: Ilia
 
 | Metoda | Ścieżka | Do czego | Ekran |
 |---|---|---|---|
@@ -289,7 +293,7 @@ Dla każdego budynku *b*, zasobu *r* i grupy priorytetu *p* (A/B/C) szukamy licz
 
 ---
 
-## 9. Backend – struktura i baza danych (Ilia)
+## 9. Backend – struktura i baza danych (Ilia; jedynie `worker/p2/` pisze Robert)
 
 ```
 backend/src/main/java/pl/ans/ipbisr/
@@ -324,7 +328,7 @@ Połączenie: lokalnie Camunda 8 Run **albo** serwer uczelniany (dane w `.env`, 
 
 ---
 
-## 10. Frontend – ekrany (Robert)
+## 10. Frontend – ekrany (w całości Robert)
 
 Next.js (App Router) + MUI, wykresy `@mui/x-charts`. Logowanie uproszczone: wybór roli na starcie (zapamiętany w przeglądarce).
 
@@ -343,54 +347,99 @@ User taski zarządu/analityka – w **Camunda Tasklist** (link w menu).
 
 ---
 
-## 11. Kolejność pracy (kamienie milowe)
+## 11. Kolejność pracy – zadania Ilii i Roberta
 
-Każdy krok kończy się działającym demo + commitem + PR.
+Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracują **równolegle**; strzałka ⇢ oznacza, że ktoś czeka na wynik drugiej osoby.
 
-### M1 – Fundament (razem, najpierw)
-- [ ] **razem:** zatwierdzić kontrakty API z sekcji 8 (JSON) – po tym pracujemy równolegle
-- [ ] Ilia: Camunda starter w backendzie, połączenie z Camunda 8 Run, auto-wdrażanie BPMN/DMN
-- [ ] Ilia: Flyway – schemat tabel (sekcja 9)
-- [ ] Robert: generator danych syntetycznych → `data/*.csv`
-- [ ] Ilia: import CSV do bazy przy starcie (profil `dev`)
-- **Gotowe, gdy:** `docker compose up` + Camunda 8 Run → procesy P1a/b/c widoczne w Operate, baza ma dane.
+### M1 – Fundament
 
-### M2 – P1 end-to-end (Ilia)
+**Ilia**
+- [ ] opisać API backendu w sekcji 8 (JSON odpowiedzi) – żeby Robert mógł robić frontend
+- [ ] Camunda starter w backendzie, połączenie z Camunda 8 Run, auto-wdrażanie BPMN/DMN
+- [ ] Flyway – schemat tabel (sekcja 9)
+- [ ] import CSV z `data/` do bazy przy starcie (profil `dev`) ⇢ czeka na generator Roberta
+
+**Robert**
+- [ ] opisać API serwisu ML w sekcji 8 (`/forecast`, `/allocate`) – żeby Ilia mógł pisać worker P3
+- [ ] generator danych syntetycznych → `data/*.csv`
+- [ ] frontend: menu, wybór roli, wspólny klient API (`lib/api.ts`)
+
+**Gotowe, gdy:** `docker compose up` + Camunda 8 Run → procesy P1a/b/c widoczne w Operate, baza ma dane, frontend ma menu.
+
+### M2 – P1 end-to-end
+
+**Ilia**
 - [ ] DMN `Priorytet_mieszkancow.dmn` (2 tabele)
 - [ ] workery P1a/b/c (sekcja 4.1), warunek bramki, formularz „Zweryfikuj zgłoszenia”
 - [ ] `POST/GET /api/zgloszenia`, `GET /api/budynki`, `/api/mieszkancy`
-- [ ] Robert: ekrany Operator + Budynki
-- **Gotowe, gdy:** zgłoszenie z formularza → w Tasklist zadanie dla zarządu (dla śmierci) → po zatwierdzeniu priorytet zmienia się w tabeli.
+- [ ] testy JUnit workerów P1
 
-### M3 – P2 (Robert)
-- [ ] `P2a`, `P2b` wykonywalne
+**Robert**
+- [ ] ekran Operator (formularz zgłoszenia + lista)
+- [ ] ekran Budynki i mieszkańcy
+- [ ] *(równolegle)* zacząć model ML (M3)
+
+**Gotowe, gdy:** zgłoszenie z formularza → w Tasklist zadanie dla zarządu (dla śmierci) → po zatwierdzeniu priorytet zmienia się w tabeli.
+
+### M3 – P2
+
+**Robert**
+- [ ] `P2a`, `P2b` wykonywalne + formularz „Zweryfikuj prognozę”
 - [ ] trening modelu, `/forecast`, `/model/info`, testy pytest
-- [ ] workery P2 + klient ML + fallback, formularz „Zweryfikuj prognozę”
-- [ ] ekran Prognoza
-- **Gotowe, gdy:** prognoza z różnicą > 30% → zadanie w Tasklist; inaczej od razu „Prognoza gotowa”.
+- [ ] workery P2 w backendzie (`worker/p2/`) + fallback na ostatnią prognozę
+- [ ] ekran Prognoza (wykres)
 
-### M4 – P3 (Ilia, `/allocate` razem z Robertem)
-- [ ] `P3a`, `P3b` wykonywalne
-- [ ] `/allocate` (LP) + test porównawczy z algorytmem zachłannym
-- [ ] workery P3, formularze „Zatwierdź plan”, „Rozpatrz wniosek”
-- [ ] ekrany Plan + Magazyn
-- **Gotowe, gdy:** mały stan magazynu → wniosek do organizacji → odpowiedź → zatwierdzenie → „Zlecenie wydania”.
+**Ilia**
+- [ ] `GET /api/prognozy/ostatnia`, `/api/prognozy`, `/api/zuzycie/historia`
+- [ ] *(równolegle)* `P3a`, `P3b` wykonywalne (M4)
+
+**Gotowe, gdy:** prognoza z różnicą > 30% → zadanie w Tasklist; inaczej od razu „Prognoza gotowa”.
+
+### M4 – P3
+
+**Robert**
+- [ ] `/allocate` (LP, `scipy.optimize.linprog`) + algorytm zachłanny do porównania + testy pytest
+- [ ] ekrany Plan przydziału + Magazyn
+
+**Ilia**
+- [ ] workery P3a/P3b ⇢ korzysta z `/allocate` Roberta
+- [ ] formularze „Zatwierdź plan przydziału”, „Rozpatrz wniosek”
+- [ ] `GET /api/plany/...`, `GET/PUT /api/magazyn`
+
+**Gotowe, gdy:** mały stan magazynu → wniosek do organizacji → odpowiedź → zatwierdzenie → „Zlecenie wydania”.
 
 ### M5 – Całość
-- [ ] `/api/procesy`, `/api/audyt`, przyciski symulacji, ekrany Procesy + Audyt
+
+**Ilia**
+- [ ] `/api/procesy`, `/api/audyt`, `/api/symulacja/...`
 - [ ] *(jeśli czas)* automatyczne zatwierdzanie po 1 h / 2 h
 - [ ] wdrożenie na serwer uczelniany
-- **Gotowe, gdy:** demo P1 → P2 → P3 od początku do końca na serwerze uczelnianym.
+
+**Robert**
+- [ ] ekrany Procesy (z przyciskami symulacji) + Audyt
+- [ ] dopracowanie wyglądu frontendu (skill `ui-ux-pro-max`)
+
+**Gotowe, gdy:** demo P1 → P2 → P3 od początku do końca na serwerze uczelnianym.
 
 ### M6 – Testy (przejście do etapu 4)
-- [ ] JUnit 5 + Mockito: workery (mock klienta ML i repozytoriów)
-- [ ] `camunda-process-test`: każda ścieżka każdej bramki w P1b, P2b, P3a
+
+**Ilia**
+- [ ] JUnit 5 + Mockito: workery P1, P3 (mock klienta ML i repozytoriów)
+- [ ] `camunda-process-test`: każda ścieżka bramek w P1b i P3a
+- [ ] czasy procesów z Operate (do rozdziału 4)
+
+**Robert**
 - [ ] pytest: model (metryki powyżej progu), LP (np. A zawsze pokryte, gdy zasobów wystarcza)
-- [ ] wykresy do rozdziału 4 (metryki ML, LP vs zachłanny, czasy procesów z Operate)
+- [ ] `camunda-process-test`: ścieżki bramki w P2b
+- [ ] wykresy do rozdziału 4: metryki ML, LP vs zachłanny
 
 ### M7 – Dokumentacja rozdziału 3
-- [ ] diagram komponentów (sekcja 1), lista serwisów i endpointów (sekcja 8), link do repozytorium
-- [ ] opis DMN, modelu ML i algorytmu LP (sekcje 5–7)
+
+**Ilia**
+- [ ] diagram komponentów (sekcja 1), opis Camundy i procesów, DMN, API backendu, link do repozytorium
+
+**Robert**
+- [ ] opis danych i modelu ML, algorytmu LP, API serwisu ML, ekranów frontendu
 
 ---
 

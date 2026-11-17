@@ -72,9 +72,9 @@ docker-compose.yml
 Szczegółowy plan (job type, wiadomości, DMN, ML, algorytm, API, ekrany, kamienie milowe): **`docs/PLAN_ETAP3.md`**. Status modeli: `bpmn/README.md`.
 
 ## Podział pracy
-- **Ilia Smakovskyi** – backend (Spring Boot), Camunda, baza danych, procesy P1 i P3.
-- **Robert Kłusek** – serwis ML (Python), proces P2, frontend.
-- Razem – kontrakty API, DMN, testy, dokumentacja.
+Każde zadanie ma jednego właściciela (szczegóły: `docs/PLAN_ETAP3.md`, sekcja 11).
+- **Ilia Smakovskyi** – backend (Spring Boot) + Camunda + baza danych, procesy **P1** i **P3**, DMN, API backendu.
+- **Robert Kłusek** – ml-service (model ML `/forecast`, algorytm LP `/allocate`, dane syntetyczne), proces **P2**, **cały frontend**.
 Pracujemy na osobnych gałęziach i robimy Pull Requesty do `main`; drugi autor przegląda PR.
 
 ## Camunda – serwer uczelniany
