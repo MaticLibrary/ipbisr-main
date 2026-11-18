@@ -23,8 +23,38 @@ services:
     ports:
       - "${ML_SERVICE_PORT:-8000}:8000"
 
+  # Lokalna Camunda 8.9 (Zeebe + Operate + Tasklist w jednym obrazie) – ta sama linia co serwer uczelniany.
+  # Uruchomienie: docker compose --profile camunda up -d camunda
+  # Operate/Tasklist: http://localhost:8080 (login demo / demo), gRPC: 26500
+  camunda:
+    image: camunda/camunda:8.9.28
+    container_name: ipbisr-camunda
+    profiles: ["camunda"]
+    environment:
+      # Lokalny użytkownik administracyjny demo / demo (logowanie basic, jak na serwerze uczelnianym)
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_USERNAME: demo
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_PASSWORD: demo
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_NAME: Demo
+      CAMUNDA_SECURITY_INITIALIZATION_USERS_0_EMAIL: demo@example.com
+      CAMUNDA_SECURITY_INITIALIZATION_DEFAULTROLES_ADMIN_USERS_0: demo      # Bez Elasticsearcha: dane dla Operate/Tasklist trzymamy w wbudowanej bazie H2 (tylko do lokalnego developmentu –
+      # po restarcie kontenera historia procesów znika, a backend wdroży modele ponownie)
+      CAMUNDA_DATA_SECONDARYSTORAGE_TYPE: rdbms
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_URL: jdbc:h2:mem:camunda;DB_CLOSE_DELAY=-1
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_USERNAME: sa
+      CAMUNDA_DATA_SECONDARYSTORAGE_RDBMS_PASSWORD: ""
+    ports:
+      - "8080:8080"
+      - "26500:26500"
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/9600' || exit 1"]
+      interval: 10s
+      retries: 20
+
   backend:
-    build: ./backend
+    # Kontekst = katalog główny repo, bo do JAR-a trafiają też bpmn/wykonywalne i dmn
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: ipbisr-backend
     env_file:
       - path: .env
@@ -32,6 +62,8 @@ services:
     environment:
       ML_SERVICE_URL: http://ml-service:8000
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ipbisr}
+      CAMUNDA_GRPC_ADDRESS: ${CAMUNDA_GRPC_ADDRESS:-http://host.docker.internal:26500}
+      CAMUNDA_REST_ADDRESS: ${CAMUNDA_REST_ADDRESS:-http://host.docker.internal:8080}
     ports:
       - "${BACKEND_PORT:-8081}:8081"
     depends_on:
