@@ -505,4 +505,6 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 
 - [x] **Wersja Camundy na serwerze uczelnianym** – 8.9.0 (ustalone z topologii klastra).
 - [x] Dostęp do serwera uczelnianego – działa bez VPN.
+- [ ] **Sprawdzić połączenie backendu z serwerem uczelnianym** (odłożone po M1): dane w `.env` (`CAMUNDA_REST_ADDRESS`, `CAMUNDA_USERNAME`, `CAMUNDA_PASSWORD`),
+  nieznany jeszcze `CAMUNDA_GRPC_ADDRESS` (port 26500 – do potwierdzenia u prowadzącego albo tryb „tylko REST”). Backend dotąd testowany tylko z lokalną Camundą.
 - [ ] Akceptacja P4 i P5 → wtedy osobny plan.
