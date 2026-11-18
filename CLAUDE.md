@@ -30,7 +30,7 @@ Systemy zewnętrzne (Rejestr ludności, System pogodowy, Organizacje humanitarne
 
 ## Stack (uproszczony względem „wstępnego” z dokumentacji)
 - **Camunda 8** (Zeebe) – BPMN, DMN, Tasklist dla user tasków, Operate do podglądu
-- **Java 21 + Spring Boot 3 + Camunda Spring Boot SDK** – job workery dla service/send tasków, REST do startu procesów i wysyłania wiadomości
+- **Java 21 + Spring Boot 4.0 + Camunda Spring Boot SDK 8.9** (starter 8.9 wymaga Spring Boot 4; w teście JDBC/MVC adnotacje są w osobnych modułach `spring-boot-*-test`) – job workery dla service/send tasków, REST do startu procesów i wysyłania wiadomości
 - **Python 3 + FastAPI + scikit-learn + pandas** – serwis ML (prognoza zapotrzebowania) i optymalizacja przydziału (np. `scipy.optimize.linprog` lub prosty algorytm priorytetowy)
 - **PostgreSQL** – mieszkańcy, budynki, stany magazynowe, prognozy, plany, dziennik audytu
 - **Docker Compose** – uruchomienie Postgresa, backendu i serwisu ML
