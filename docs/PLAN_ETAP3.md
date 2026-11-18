@@ -291,6 +291,55 @@ Dla każdego budynku *b*, zasobu *r* i grupy priorytetu *p* (A/B/C) szukamy licz
 | POST | `/api/symulacja/ponowne-planowanie` | publikuje „Ponowne planowanie” (zamiast P5) | Procesy |
 | GET | `/api/audyt` | dziennik decyzji | Audyt |
 
+### Format JSON backendu – kontrakt dla frontendu (Ilia → Robert)
+
+Wspólne zasady: JSON w UTF-8, nazwy pól po polsku w `camelCase`, daty/czasy w ISO-8601 (`2026-11-18T12:00:00Z`),
+kody słownikowe jak w bazie (`A/B/C`, `ZYJE`, `WODA`…), ilości jako liczby. Błąd: HTTP 4xx/5xx i `{"blad": "opis po polsku"}`.
+CORS dla `http://localhost:3000` włączony. Pola oznaczone `?` mogą być `null`.
+
+**`POST /api/zgloszenia`** – wejście → `201`:
+```json
+{ "pesel": "50010112345", "budynekId": null, "rodzaj": "SMIERC", "opis": "zgłoszone przez sąsiada" }
+```
+(wymagany `pesel` **albo** `budynekId`; `rodzaj` ∈ CHOROBA, NIEPELNOSPRAWNOSC, UTRATA_MIESZKANIA, SMIERC, ZAGINIECIE)
+```json
+{ "id": 12, "status": "NOWE", "utworzono": "2026-11-18T12:00:00Z" }
+```
+
+**`GET /api/zgloszenia`** → `[ { "id": 12, "pesel": "…"?, "budynekId": 3?, "rodzaj": "SMIERC", "opis": "…"?, "losowaKontrola": false, "decyzja": "POTWIERDZONE"?, "status": "NOWE", "utworzono": "…" } ]`
+
+**`GET /api/budynki?dzielnica=1`** → `[ { "id": 3, "adres": "Rynek 1", "dzielnicaId": 1, "dzielnica": "Centrum", "priorytet": "A"?, "liczbaMieszkancow": 24 } ]`
+(`priorytet` budynku = najwyższy priorytet mieszkańca w budynku; `null`, dopóki P1 nie przeliczył)
+
+**`GET /api/budynki/{id}`** → `{ "id": 3, "adres": "…", "dzielnicaId": 1, "dzielnica": "Centrum", "mieszkancy": [ <mieszkaniec> ] }`
+
+**`GET /api/mieszkancy?priorytet=A&status=ZYJE`** → `[ <mieszkaniec> ]`, gdzie
+`<mieszkaniec>` = `{ "pesel": "…", "imie": "Anna", "nazwisko": "Nowak", "wiek": 76, "budynekId": 3, "priorytet": "A"?, "poziomPotrzeb": "PODWYZSZONY"?, "dostawaBezposrednia": true, "status": "ZYJE" }`
+
+**`GET /api/prognozy/ostatnia`** (M3) → `{ "id": 5, "utworzono": "…", "zrodlo": "ML", "roznicaProc": 12.5?, "status": "ZATWIERDZONA", "pozycje": [ { "poziom": "DZIELNICA", "obiektId": 1?, "zasob": "WODA", "ilosc": 5400.0 } ] }` (`poziom` ∈ MIASTO, DZIELNICA, BUDYNEK); `GET /api/prognozy` → lista bez `pozycje`.
+
+**`GET /api/zuzycie/historia?dzielnica=1&zasob=WODA`** (M3) → `[ { "data": "2026-03-01", "ilosc": 5100.0 } ]`
+
+**`GET /api/plany/ostatni`**, **`/api/plany/{id}`** (M4) →
+```json
+{ "id": 2, "prognozaId": 5, "krytycznePokryte": false, "status": "DO_ZATWIERDZENIA", "zatwierdzil": null,
+  "pozycje": [ { "budynekId": 3, "zasob": "WODA", "priorytet": "A", "przydzielono": 60.0, "potrzeba": 60.0 } ],
+  "niedobory": [ { "zasob": "LEKI", "ilosc": 40.0 } ],
+  "dostawyBezposrednie": [ { "pesel": "…", "zasob": "LEKI", "ilosc": 1.0 } ],
+  "harmonogram": [ { "punktId": 1, "okno": "08:00-10:00", "budynekId": 3 } ] }
+```
+
+**`GET /api/magazyn`** → `[ { "zasob": "WODA", "ilosc": 12000.0, "jednostka": "l" } ]`; **`PUT /api/magazyn`** – wejście: ta sama lista, odpowiedź: zapisana lista.
+
+**`GET /api/procesy`** (M5) → `[ { "instancjaId": "2251799813685249", "proces": "Proces_Analiza_sytuacji", "stan": "ACTIVE", "start": "…", "operateUrl": "http://localhost:8080/operate/processes/…" } ]`
+
+**`POST /api/symulacja/zmiana-sytuacji`**, **`/ponowne-planowanie`** (M5) – wejście `{ "poziomZagrozenia": 2 }` (opcjonalne) → `202 { "idZdarzenia": "…" }`.
+
+**`GET /api/audyt?limit=100`** (M5) → `[ { "czas": "…", "aktor": "zarzad", "proces": "P1b", "akcja": "ZWERYFIKOWANO", "szczegoly": { "decyzja": "POTWIERDZONE" } } ]`
+
+Endpointy oznaczone M3–M5 powstają w tych kamieniach milowych – do tego czasu frontend może użyć danych-atrap o powyższym kształcie.
+Zmianę kontraktu zgłaszam Robertowi przed wprowadzeniem (zasada z początku dokumentu).
+
 ---
 
 ## 9. Backend – struktura i baza danych (Ilia; jedynie `worker/p2/` pisze Robert)
@@ -324,7 +373,8 @@ Tabele (Flyway):
 | `audyt` | czas, aktor, proces, akcja, szczegóły (JSON) – wymaganie „pełna rejestrowalność decyzji” |
 
 Wdrażanie do Camundy: backend przy starcie wdraża pliki z `bpmn/wykonywalne/`, `bpmn/wykonywalne/forms/` i `dmn/` (Maven kopiuje je do zasobów – jedno źródło prawdy).
-Połączenie: lokalnie Camunda 8 Run **albo** serwer uczelniany (dane w `.env`, logowanie basic). Serwer uczelniany działa na Camundzie **8.9.0** (1 broker, 1 partycja), dlatego używamy `camunda-spring-boot-starter` w wersji **8.9.x**; dostęp jest możliwy bez VPN.
+Połączenie: lokalnie Camunda 8.9 w Dockerze (profil `camunda`) **albo** serwer uczelniany (dane w `.env`, logowanie basic). Serwer uczelniany działa na Camundzie **8.9.0** (1 broker, 1 partycja), dlatego używamy `camunda-spring-boot-starter` w wersji **8.9.x** (8.9.28); dostęp jest możliwy bez VPN.
+Starter 8.9 wymaga **Spring Boot 4.0**, więc cały backend jest na Spring Boot 4.0.9 (Java 21); do tego `httpclient5` jest przypięty w `pom.xml` do wersji wymaganej przez klienta Camunda.
 
 ---
 
@@ -354,17 +404,25 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 ### M1 – Fundament
 
 **Ilia**
-- [ ] opisać API backendu w sekcji 8 (JSON odpowiedzi) – żeby Robert mógł robić frontend
-- [ ] Camunda starter w backendzie, połączenie z Camunda 8 Run, auto-wdrażanie BPMN/DMN
-- [ ] Flyway – schemat tabel (sekcja 9)
-- [ ] import CSV z `data/` do bazy przy starcie (profil `dev`) ⇢ czeka na generator Roberta
+- [x] opisać API backendu w sekcji 8 (JSON odpowiedzi) – żeby Robert mógł robić frontend
+- [x] Camunda starter w backendzie, połączenie z Camundą 8.9 (lokalnie w Dockerze: `docker compose --profile camunda up -d camunda`), auto-wdrażanie BPMN/DMN
+- [x] Flyway – schemat tabel (sekcja 9) – `V1__schemat.sql`
+- [x] import CSV z `data/` do bazy przy starcie (profil `dev`) – gotowy i przetestowany na małych plikach ⇢ pełne dane czekają na generator Roberta
+
+> **Dla Roberta (uwagi z M1 Ilii):**
+> 1. Format JSON endpointów backendu – sekcja 8, podsekcja „Format JSON backendu”.
+> 2. Kontrakt kolumn plików CSV dla generatora danych – `data/README.md` (dodałem 3 kolumny: `zawod_krytyczny`, `utrata_mieszkania`, `osoby_na_utrzymaniu` – potrzebuje ich DMN).
+> 3. Backend jest na **Spring Boot 4.0** (starter Camunda 8.9 tego wymaga). Worker P2 w `worker/p2/` pisz tak jak workery P1 (`@JobWorker`) – przykłady przyjdą z M2.
+> 4. Lokalna Camunda: `docker compose --profile camunda up -d camunda`, Operate `http://localhost:8080` (`demo`/`demo`).
+> 5. Gałąź Ilii: `ilia/m1-fundament` (PR do `main`).
 
 **Robert**
 - [ ] opisać API serwisu ML w sekcji 8 (`/forecast`, `/allocate`) – żeby Ilia mógł pisać worker P3
 - [ ] generator danych syntetycznych → `data/*.csv`
 - [ ] frontend: menu, wybór roli, wspólny klient API (`lib/api.ts`)
 
-**Gotowe, gdy:** `docker compose up` + Camunda 8 Run → procesy P1a/b/c widoczne w Operate, baza ma dane, frontend ma menu.
+**Gotowe, gdy:** `docker compose up` + Camunda 8.9 → procesy P1a/b/c widoczne w Operate, baza ma dane, frontend ma menu.
+*Status: część Ilii ✅ zrobiona (procesy P1a/b/c wdrożone i widoczne przez API Camundy, schemat + import CSV przetestowane); czekamy na część Roberta.*
 
 ### M2 – P1 end-to-end
 
