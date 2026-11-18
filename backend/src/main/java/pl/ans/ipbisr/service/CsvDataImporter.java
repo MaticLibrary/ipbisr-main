@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Date;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Wczytuje dane syntetyczne z plików CSV (katalog data/) do bazy.
@@ -70,7 +73,11 @@ public class CsvDataImporter {
         this.jdbc = jdbc;
     }
 
-    /** Importuje wszystkie znane pliki z podanego katalogu. */
+    /**
+     * Importuje wszystkie znane pliki z podanego katalogu – „wszystko albo nic”: przy błędzie w jednym pliku
+     * cofamy cały import, żeby reguła „tabela ma dane = pomiń” nie ukryła połowicznie wczytanych danych.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void importuj(Path katalog) {
         for (Tabela tabela : TABELE) {
             Path plik = katalog.resolve(tabela.plik());
@@ -104,8 +111,11 @@ public class CsvDataImporter {
             return 0;
         }
 
+        // pliki z Pythona/Excela mogą zaczynać się znacznikiem BOM – usuwamy go z pierwszego nagłówka
+        String pierwsza = linie.get(0).startsWith("﻿") ? linie.get(0).substring(1) : linie.get(0);
+
         // pozycja każdej kolumny w nagłówku CSV – kolejność kolumn w pliku nie ma znaczenia
-        List<String> naglowek = List.of(linie.get(0).trim().split(",", -1));
+        List<String> naglowek = List.of(pierwsza.trim().split(",", -1));
         List<Integer> pozycje = new ArrayList<>();
         for (Kolumna kolumna : tabela.kolumny()) {
             int pozycja = naglowek.indexOf(kolumna.nazwa());
@@ -121,16 +131,23 @@ public class CsvDataImporter {
         String sql = "INSERT INTO " + tabela.nazwa() + " (" + kolumnySql + ") VALUES (" + znaki + ")";
 
         List<Object[]> wiersze = new ArrayList<>();
-        for (String linia : linie.subList(1, linie.size())) {
+        for (int numer = 1; numer < linie.size(); numer++) {
+            String linia = linie.get(numer);
             if (linia.isBlank()) {
                 continue;
             }
-            String[] pola = linia.split(",", -1);
-            Object[] wartosci = new Object[tabela.kolumny().size()];
-            for (int i = 0; i < wartosci.length; i++) {
-                wartosci[i] = konwertuj(pola[pozycje.get(i)].trim(), tabela.kolumny().get(i).typ());
+            try {
+                String[] pola = linia.split(",", -1);
+                Object[] wartosci = new Object[tabela.kolumny().size()];
+                for (int i = 0; i < wartosci.length; i++) {
+                    wartosci[i] = konwertuj(pola[pozycje.get(i)].trim(), tabela.kolumny().get(i).typ());
+                }
+                wiersze.add(wartosci);
+            } catch (RuntimeException e) {
+                // numer + 1, bo linie liczymy od 1, a nagłówek to linia 1
+                throw new IllegalStateException(
+                        "Błąd w pliku " + plik.getFileName() + ", linia " + (numer + 1) + ": " + linia, e);
             }
-            wiersze.add(wartosci);
         }
         jdbc.batchUpdate(sql, wiersze);
         return wiersze.size();
@@ -143,8 +160,14 @@ public class CsvDataImporter {
         return switch (typ) {
             case TEKST -> tekst;
             case LICZBA_CALKOWITA -> Integer.valueOf(tekst);
-            case LICZBA -> new java.math.BigDecimal(tekst);
-            case LOGICZNY -> Boolean.valueOf(tekst);
+            case LICZBA -> new BigDecimal(tekst);
+            case LOGICZNY -> {
+                // tylko true/false – literówka ma być błędem, a nie cichym „false”
+                if (!tekst.equals("true") && !tekst.equals("false")) {
+                    throw new IllegalArgumentException("oczekiwano true/false, jest: " + tekst);
+                }
+                yield Boolean.valueOf(tekst);
+            }
             case DATA -> Date.valueOf(LocalDate.parse(tekst));
         };
     }

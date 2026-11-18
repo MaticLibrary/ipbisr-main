@@ -64,6 +64,9 @@ Operate i Tasklist: http://localhost:8080 (login `demo` / `demo`), gRPC Zeebe: `
 Dlatego backend działa na porcie **8081**. Dane Operate są w pamięci (H2) – po restarcie kontenera historia znika,
 a backend wdraża modele ponownie przy starcie.
 
+**Camunda musi działać przed startem backendu** (lokalna albo uczelniana) – backend wdraża do niej modele przy starcie.
+Dlatego `docker compose up` bez profilu `camunda` wymaga, żeby Camunda była już dostępna pod adresem z `.env`.
+
 Backend przy starcie **sam wdraża** wszystko z `bpmn/wykonywalne/` (`*.bpmn`, `forms/*.form`) i `dmn/` (`*.dmn`).
 Po uruchomieniu backendu procesy P1a, P1b, P1c są widoczne w Operate (zakładka *Processes*).
 

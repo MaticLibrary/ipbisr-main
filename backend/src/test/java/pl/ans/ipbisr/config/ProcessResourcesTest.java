@@ -2,6 +2,7 @@ package pl.ans.ipbisr.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.camunda.client.annotation.Deployment;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -24,15 +25,21 @@ class ProcessResourcesTest {
     @Test
     void modeleEtapu2NieSaWdrazane() throws Exception {
         // modele-etap2/ to tylko dokumentacja – nie wolno ich wdrażać do Camundy
-        Resource[] pliki = resolver.getResources("classpath*:/bpmn/**/P?_*.bpmn");
+        Resource[] pliki = resolver.getResources("classpath*:/bpmn/**/*.bpmn");
 
+        assertThat(pliki).isNotEmpty();
         assertThat(pliki).extracting(Resource::getFilename)
                 .noneMatch(nazwa -> nazwa.matches("P[1-5]_.*"));
+        assertThat(pliki).extracting(r -> r.getURL().toString())
+                .noneMatch(url -> url.contains("modele-etap2"));
     }
 
     @Test
-    void konfiguracjaWdrozeniaWskazujeBpmnDmnIFormularze() {
-        assertThat(CamundaDeploymentConfig.ZASOBY).containsExactlyInAnyOrder(
+    void adnotacjaDeploymentWskazujeBpmnFormularzeIDmn() {
+        // czytamy prawdziwą adnotację, która uruchamia wdrożenie – nie kopię listy
+        Deployment deployment = CamundaDeploymentConfig.class.getAnnotation(Deployment.class);
+
+        assertThat(deployment.resources()).containsExactlyInAnyOrder(
                 "classpath*:/bpmn/**/*.bpmn", "classpath*:/bpmn/**/*.form", "classpath*:/dmn/**/*.dmn");
     }
 }

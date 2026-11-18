@@ -23,4 +23,7 @@ Uwagi:
 - Kolumny `zawod_krytyczny`, `utrata_mieszkania`, `osoby_na_utrzymaniu` **dodałem względem planu** – potrzebuje ich tabela DMN
   `Priorytet` (sekcja 5 planu). Jeśli generator ich nie ma, napisz – zmienimy schemat.
 - `pesel` musi mieć 11 znaków; `plec` to `K` lub `M`; wartości słownikowe pilnuje baza (ograniczenia `CHECK`).
+- Import jest „wszystko albo nic” (błąd w jednym pliku cofa cały import i wskazuje plik oraz linię) i pomija tabele,
+  które mają już dane. Po ponownym wygenerowaniu CSV trzeba wyczyścić bazę: `docker compose down -v` (usuwa wolumen `pgdata`).
+- Pliki z BOM (np. Python `utf-8-sig`) i końcami linii CRLF są obsługiwane; wartości logiczne tylko `true`/`false`.
 - Tabela `mieszkaniec` (rejestr potrzeb) **nie** pochodzi z CSV – wypełnia ją proces P1.

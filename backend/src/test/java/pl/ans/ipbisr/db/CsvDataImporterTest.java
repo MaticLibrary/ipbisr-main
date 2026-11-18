@@ -1,6 +1,7 @@
 package pl.ans.ipbisr.db;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,10 +12,14 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import pl.ans.ipbisr.service.CsvDataImporter;
 
 // Testy importu CSV z katalogu data/ (małe pliki testowe w katalogu tymczasowym)
 @Import(CsvDataImporter.class)
+// Import ma własną transakcję (wszystko albo nic), więc test nie może jej obejmować własną
+@Transactional(propagation = Propagation.NOT_SUPPORTED)
 class CsvDataImporterTest extends PostgresJdbcTest {
 
     @Autowired
@@ -85,6 +90,38 @@ class CsvDataImporterTest extends PostgresJdbcTest {
         importer.importuj(dataDir);
 
         assertThat(jdbc.queryForObject("SELECT count(*) FROM dzielnica", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void radziSobieZeZnacznikiemBomICrlf() throws IOException {
+        // Pliki zapisane np. przez Pythona (utf-8-sig) lub Excela mają BOM, a Windows kończy linie CRLF
+        plik("dzielnice.csv", "﻿id,nazwa\r\n1,Centrum\r\n");
+
+        importer.importuj(dataDir);
+
+        assertThat(jdbc.queryForObject("SELECT nazwa FROM dzielnica WHERE id = 1", String.class))
+                .isEqualTo("Centrum");
+    }
+
+    @Test
+    void bladWWierszuWskazujePlikILinie() throws IOException {
+        plik("dzielnice.csv", "id,nazwa\n1,Centrum\nabc,Zla\n");
+
+        assertThatThrownBy(() -> importer.importuj(dataDir))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("dzielnice.csv")
+                .hasMessageContaining("linia 3");
+    }
+
+    @Test
+    void bladWJednymPlikuNieZostawiaPolowicznychDanych() throws IOException {
+        plik("dzielnice.csv", "id,nazwa\n1,Centrum\n");
+        plik("punkty_wydawania.csv", "id,nazwa,dzielnica_id,przepustowosc_kg\n1,A,1,500\n2,B,1,zle\n");
+
+        assertThatThrownBy(() -> importer.importuj(dataDir)).isInstanceOf(IllegalStateException.class);
+
+        // import jest „wszystko albo nic” – po błędzie baza zostaje pusta
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM dzielnica", Integer.class)).isZero();
     }
 
     @Test
