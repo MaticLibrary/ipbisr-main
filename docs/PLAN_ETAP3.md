@@ -317,9 +317,9 @@ CORS dla `http://localhost:3000` włączony. Pola oznaczone `?` mogą być `null
 **`GET /api/mieszkancy?priorytet=A&status=ZYJE`** → `[ <mieszkaniec> ]`, gdzie
 `<mieszkaniec>` = `{ "pesel": "…", "imie": "Anna", "nazwisko": "Nowak", "wiek": 76, "budynekId": 3, "priorytet": "A"?, "poziomPotrzeb": "PODWYZSZONY"?, "dostawaBezposrednia": true, "status": "ZYJE" }`
 
-**`GET /api/prognozy/ostatnia`** (M3) → `{ "id": 5, "utworzono": "…", "zrodlo": "ML", "roznicaProc": 12.5?, "status": "ZATWIERDZONA", "pozycje": [ { "poziom": "DZIELNICA", "obiektId": 1?, "zasob": "WODA", "ilosc": 5400.0 } ] }` (`poziom` ∈ MIASTO, DZIELNICA, BUDYNEK); `GET /api/prognozy` → lista bez `pozycje`.
+**`GET /api/prognozy/ostatnia`** (M3) → `{ "id": 5, "utworzono": "…", "zrodlo": "ML", "roznicaProc": 12.5?, "status": "ZATWIERDZONA", "pozycje": [ { "poziom": "DZIELNICA", "obiektId": 1?, "zasob": "WODA", "ilosc": 5400.0 } ] }` (`poziom` ∈ MIASTO, DZIELNICA, BUDYNEK); `GET /api/prognozy` → lista (od najnowszej) bez `pozycje`. Brak prognoz → `/ostatnia` odpowiada `404`.
 
-**`GET /api/zuzycie/historia?dzielnica=1&zasob=WODA`** (M3) → `[ { "data": "2026-03-01", "ilosc": 5100.0 } ]`
+**`GET /api/zuzycie/historia?dzielnica=1&zasob=WODA`** (M3) → `[ { "data": "2026-03-01", "ilosc": 5100.0 } ]` (rosnąco po dacie; `zasob` wymagany, bez `dzielnica` = suma dla całego miasta)
 
 **`GET /api/plany/ostatni`**, **`/api/plany/{id}`** (M4) →
 ```json
@@ -460,10 +460,21 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 - [ ] ekran Prognoza (wykres)
 
 **Ilia**
-- [ ] `GET /api/prognozy/ostatnia`, `/api/prognozy`, `/api/zuzycie/historia`
+- [x] `GET /api/prognozy/ostatnia`, `/api/prognozy`, `/api/zuzycie/historia` (+ 11 testów: SQL na PostgreSQL i kontrakt REST)
 - [ ] *(równolegle)* `P3a`, `P3b` wykonywalne (M4)
 
 **Gotowe, gdy:** prognoza z różnicą > 30% → zadanie w Tasklist; inaczej od razu „Prognoza gotowa”.
+*Status: część Ilii (API prognoz i historii zużycia) ✅ zrobiona; czekamy na część Roberta (procesy P2, ML, workery, ekran Prognoza). `P3a`/`P3b` Ilia zrobi w M4.*
+
+> **Dla Roberta (uwagi z M3 Ilii) – co jest gotowe i co robić:**
+> 1. **Gałąź:** `ilia/m3-api-prognoz` (PR do `main`). Po mergu: `git checkout main && git pull`, swoja gałąź `robert/m3-p2` z aktualnego `main`.
+> 2. **Gotowe API do ekranu Prognoza** (kształt JSON jak w sekcji 8, bez zmian): `GET /api/prognozy/ostatnia`, `GET /api/prognozy`, `GET /api/zuzycie/historia?dzielnica=&zasob=`.
+> 3. **`/api/prognozy/ostatnia`** zwraca prognozę o **największym `id`**, niezależnie od `status`. Gdy tabela `prognoza` jest pusta → **HTTP 404** `{"blad": "Nie ma jeszcze żadnej prognozy"}` – ekran ma wtedy pokazać „brak prognozy”, a nie błąd. `pozycje` są posortowane po `id` wstawienia. `roznicaProc` bywa `null`; na liście `/api/prognozy` pole `pozycje` w ogóle nie występuje.
+> 4. **`/api/zuzycie/historia`:** `zasob` jest **wymagany** (ZYWNOSC, WODA, LEKI, HIGIENA, SCHRONIENIE; inaczej HTTP 400 z opisem po polsku). `dzielnica` jest opcjonalna – bez niej dostajesz **sumę dla całego miasta** (dla wykresu poziomu MIASTO). Dane rosnąco po dacie – prosto do wykresu.
+> 5. **Twój worker P2 zapisuje prognozę do bazy** – ja tego nie robię, API tylko czyta. Tabele (`V1__schemat.sql`): `prognoza` (`zrodlo` ∈ `ML` / `OSTATNIA_ZATWIERDZONA`, `roznica_proc`, `status` – wolny tekst, np. `NOWA` → `ZATWIERDZONA`) i `prognoza_pozycja` (`poziom` MIASTO/DZIELNICA/BUDYNEK, `obiekt_id` – dla miasta `NULL`, `zasob`, `ilosc`). Ustal i trzymaj się jednej wartości statusu „gotowa do użycia” – P3 (M4) będzie czytać prognozę po `id` z wiadomości „Prognoza gotowa”.
+> 6. **Wzorzec do naśladowania:** repozytoria na `JdbcClient` – `backend/src/main/java/pl/ans/ipbisr/repository/PrognozaRepository.java` (zapis dopisz w tej samej klasie lub w serwisie), testy SQL na Testcontainers – `backend/src/test/java/pl/ans/ipbisr/db/PrognozaRepozytoriaTest.java`. Uwaga na pułapkę JDBC: `rs.wasNull()` dotyczy **ostatnio czytanej** kolumny – po `getInt/getDouble` sprawdzaj od razu.
+> 7. **Dane do wykresu:** `GET /api/zuzycie/historia` czyta tabelę `zuzycie_historia` z `data/historia_zuzycia.csv` (import przy starcie z profilem `dev`, do pustej bazy). Jak będzie Twój generator – po wygenerowaniu CSV: `docker compose down -v`, żeby baza wczytała nowe dane.
+> 8. **Od Ciebie nic nie jest potrzebne po mojej stronie w M3** – jeśli ekran potrzebuje innego kształtu odpowiedzi, napisz, zmienię kontrakt (sekcja 8) przed zmianą kodu.
 
 ### M4 – P3
 
