@@ -91,6 +91,13 @@
             <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Testy procesów i DMN: Camunda uruchamiana w kontenerze na czas testu (wymaga Dockera) -->
+        <dependency>
+            <groupId>io.camunda</groupId>
+            <artifactId>camunda-process-test-spring</artifactId>
+            <version>${camunda.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -63,6 +63,7 @@ Modele P1–P3 są zatwierdzone. W wersjach wykonywalnych dodajemy **tylko ustaw
 | „Model ML niedostępny → ostatnia zatwierdzona prognoza” (P2) | `try/catch` w workerze `wykonaj-prognoze-ml`. |
 | Start P2 „Zmiana sytuacji kryzysowej” i P3 „Ponowne planowanie” (przychodzą z P5, którego jeszcze nie ma) | Przycisk „Symulacja” we frontendzie → backend publikuje wiadomość. |
 | Timer `R/PT12H` pierwszy raz odpali się dopiero 12 h po wdrożeniu | Na demo uruchamiamy procesy wiadomością (zgłoszenie / symulacja). |
+| Skutek zgłoszenia (śmierć, zaginięcie, choroba…) dla rejestru potrzeb – na diagramie jest tylko „Zapisz wyniki” | Worker `zapisz-wyniki` po decyzji zarządu (albo automatycznie, gdy weryfikacja nie była potrzebna) zapisuje zmianę w rejestrze ludności (symulacja – centrum „odsyła” aktualizację) i przelicza DMN dla tej osoby; odrzucone zgłoszenie niczego nie zmienia |
 
 ---
 
@@ -427,10 +428,10 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 ### M2 – P1 end-to-end
 
 **Ilia**
-- [ ] DMN `Priorytet_mieszkancow.dmn` (2 tabele)
-- [ ] workery P1a/b/c (sekcja 4.1), warunek bramki, formularz „Zweryfikuj zgłoszenia”
-- [ ] `POST/GET /api/zgloszenia`, `GET /api/budynki`, `/api/mieszkancy`
-- [ ] testy JUnit workerów P1
+- [x] DMN `Priorytet_mieszkancow.dmn` (2 tabele) + 15 testów na Camundzie
+- [x] workery P1a/b/c (sekcja 4.1), warunek bramki, formularz „Zweryfikuj zgłoszenia”
+- [x] `POST/GET /api/zgloszenia`, `GET /api/budynki`, `/api/mieszkancy`
+- [x] testy JUnit workerów P1 (Mockito) + testy API i SQL
 
 **Robert**
 - [ ] ekran Operator (formularz zgłoszenia + lista)
@@ -438,6 +439,17 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 - [ ] *(równolegle)* zacząć model ML (M3)
 
 **Gotowe, gdy:** zgłoszenie z formularza → w Tasklist zadanie dla zarządu (dla śmierci) → po zatwierdzeniu priorytet zmienia się w tabeli.
+*Status: część Ilii ✅ zrobiona i sprawdzona end-to-end na lokalnej Camundzie 8.9 (zgłoszenie SMIERC → zadanie „Zweryfikuj zgłoszenia” → po zatwierdzeniu osoba ma priorytet WYKLUCZONY); czekamy na część Roberta (ekrany).*
+
+> **Dla Roberta (uwagi z M2 Ilii) – co jest gotowe i co robić:**
+> 1. **Gałąź:** `ilia/m2-p1-end-to-end` (PR do `main`). Przed startem: `git fetch && git checkout ilia/m2-p1-end-to-end` (albo poczekaj na merge M1+M2).
+> 2. **API do ekranów** (format JSON – sekcja 8, bez zmian względem kontraktu): `POST/GET /api/zgloszenia`, `GET /api/budynki?dzielnica=`, `GET /api/budynki/{id}`, `GET /api/mieszkancy?priorytet=&status=`. CORS dla `http://localhost:3000` jest włączony.
+> 3. **Walidacja `POST /api/zgloszenia`** (błąd = HTTP 400 z `{"blad": "…po polsku"}` – wyświetl ten tekst użytkownikowi): `rodzaj` z listy; wymagany `pesel` **albo** `budynekId`; **samym `budynekId` można zgłosić tylko `UTRATA_MIESZKANIA`** (pozostałe rodzaje wymagają PESEL – formularz powinien to uwzględnić); PESEL musi istnieć w rejestrze. Nieznany budynek w `/api/budynki/{id}` → 404.
+> 4. **Statusy zgłoszenia** w `GET /api/zgloszenia`: `NOWE` → `PRZEKAZANE` (jest u zarządu) → `ZAKONCZONE` (pole `decyzja` = POTWIERDZONE / ODRZUCONE albo `null`, gdy zgłoszenia nie trzeba było weryfikować); `BLAD_PROCESU` – nie udało się uruchomić procesu. Statusy aktualizują się asynchronicznie – odświeżaj listę (np. co kilka sekund).
+> 5. **Priorytet budynku** (`priorytet` w `/api/budynki`) jest `null`, dopóki P1 nie przeliczył mieszkańców. Analizę uruchamia zgłoszenie (albo timer co 12 h) – po pierwszym zgłoszeniu P1b przelicza **wszystkich** mieszkańców. Na demo: wyślij dowolne zgłoszenie, odczekaj kilka sekund, odśwież tabelę. `WYKLUCZONY` = osoba zmarła/zaginiona (pomijana w priorytecie budynku).
+> 6. **Dane do testów:** `data/*.csv` z Twojego generatora (kontrakt: `data/README.md`; backend z profilem `dev` wczytuje je do pustej bazy). Do `ewidencja_ludnosci.csv` potrzebne wszystkie kolumny z README – DMN korzysta m.in. z `zawod_krytyczny`, `utrata_mieszkania`, `osoby_na_utrzymaniu`. **Uwaga:** P1 wywołuje tabelę DMN osobno dla każdego mieszkańca (~1500 wywołań, kilkanaście–kilkadziesiąt sekund) i przekazuje listę w zmiennych procesu (limit ok. 4 MB) – przy ~1500 osób jest OK, nie generuj znacznie więcej.
+> 7. **Uruchomienie lokalne:** `docker compose up -d postgres` + `docker compose --profile camunda up -d camunda` (Operate/Tasklist `http://localhost:8080`, `demo`/`demo`), potem w `backend/`: `SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run`. Zadanie zarządu: Tasklist → „Zweryfikuj zgłoszenia” → wybierz decyzję → Complete. (Zgłoszenia typu SMIERC/ZAGINIECIE zawsze trafiają do zarządu, inne – losowo w 20%.)
+> 8. **Od Ciebie nic nie jest potrzebne po stronie procesów w M2.** Przy P2 (M3) ten sam wzorzec workerów znajdziesz w `backend/src/main/java/pl/ans/ipbisr/worker/p1/` (cienki worker `` → logika w serwisie → test Mockito), formularz wzorcowy: `bpmn/wykonywalne/forms/Zweryfikuj_zgloszenia.form`, a testy procesów na kontenerze – `PriorytetDmnTest` (``).
 
 ### M3 – P2
 
