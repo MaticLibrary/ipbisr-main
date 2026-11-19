@@ -10,9 +10,9 @@
 <bpmn:startEvent id="S3" name="Zgłoszenie zdarzenia"><bpmn:messageEventDefinition id="S3_m" messageRef="Msg_Zgl" /></bpmn:startEvent>
 <bpmn:sendTask id="T1" name="Wyślij zapytanie o dane mieszkańców"><bpmn:extensionElements><zeebe:taskDefinition type="wyslij-zapytanie-o-dane" /></bpmn:extensionElements></bpmn:sendTask>
 <bpmn:receiveTask id="T2" name="Odbierz dane mieszkańców" messageRef="Msg_Dane" />
-<bpmn:businessRuleTask id="T3" name="Wyznacz potrzeby i priorytet mieszkańców (DMN)"><bpmn:extensionElements><zeebe:calledDecision decisionId="Priorytet_mieszkancow" resultVariable="priorytet" /></bpmn:extensionElements></bpmn:businessRuleTask>
+<bpmn:businessRuleTask id="T3" name="Wyznacz potrzeby i priorytet mieszkańców (DMN)"><bpmn:extensionElements><zeebe:taskDefinition type="wyznacz-potrzeby-i-priorytet" /></bpmn:extensionElements></bpmn:businessRuleTask>
 <bpmn:exclusiveGateway id="G1" name="Są zgłoszenia do weryfikacji?" default="F5" />
-<bpmn:userTask id="T4" name="Zweryfikuj zgłoszenia (śmierć, zaginięcie, choroba)"><bpmn:extensionElements><zeebe:userTask /></bpmn:extensionElements></bpmn:userTask>
+<bpmn:userTask id="T4" name="Zweryfikuj zgłoszenia (śmierć, zaginięcie, choroba)"><bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="Zweryfikuj_zgloszenia" /></bpmn:extensionElements></bpmn:userTask>
 <bpmn:exclusiveGateway id="J1" />
 <bpmn:serviceTask id="T5" name="Zapisz wyniki w rejestrze potrzeb"><bpmn:extensionElements><zeebe:taskDefinition type="zapisz-wyniki" /></bpmn:extensionElements></bpmn:serviceTask>
 <bpmn:endEvent id="E1" name="Analiza zakończona" />
@@ -22,7 +22,7 @@
 <bpmn:sequenceFlow id="F3" sourceRef="T2" targetRef="T3" />
 <bpmn:sequenceFlow id="F4" sourceRef="T3" targetRef="G1" />
 <bpmn:sequenceFlow id="F5" name="nie" sourceRef="G1" targetRef="J1" />
-<bpmn:sequenceFlow id="F6" name="tak" sourceRef="G1" targetRef="T4"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=zgloszeniaDoWeryfikacji = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+<bpmn:sequenceFlow id="F6" name="tak" sourceRef="G1" targetRef="T4"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=zgloszenie != null and (list contains(["SMIERC","ZAGINIECIE"], zgloszenie.rodzaj) or zgloszenie.losowaKontrola)</bpmn:conditionExpression></bpmn:sequenceFlow>
 <bpmn:sequenceFlow id="F7" sourceRef="T4" targetRef="J1" />
 <bpmn:sequenceFlow id="F8" sourceRef="J1" targetRef="T5" />
 <bpmn:sequenceFlow id="F9" sourceRef="T5" targetRef="E1" />
