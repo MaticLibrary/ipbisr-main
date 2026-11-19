@@ -442,7 +442,7 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 *Status: część Ilii ✅ zrobiona i sprawdzona end-to-end na lokalnej Camundzie 8.9 (zgłoszenie SMIERC → zadanie „Zweryfikuj zgłoszenia” → po zatwierdzeniu osoba ma priorytet WYKLUCZONY); czekamy na część Roberta (ekrany).*
 
 > **Dla Roberta (uwagi z M2 Ilii) – co jest gotowe i co robić:**
-> 1. **Gałąź:** `ilia/m2-p1-end-to-end` (PR do `main`). Przed startem: `git fetch && git checkout ilia/m2-p1-end-to-end` (albo poczekaj na merge M1+M2).
+> 1. **Gałąź:** M1 i M2 Ilii są już zmergowane do `main` (PR #1 i #2). Przed startem: `git checkout main && git pull`, potem swoja gałąź `robert/...` z aktualnego `main`.
 > 2. **API do ekranów** (format JSON – sekcja 8, bez zmian względem kontraktu): `POST/GET /api/zgloszenia`, `GET /api/budynki?dzielnica=`, `GET /api/budynki/{id}`, `GET /api/mieszkancy?priorytet=&status=`. CORS dla `http://localhost:3000` jest włączony.
 > 3. **Walidacja `POST /api/zgloszenia`** (błąd = HTTP 400 z `{"blad": "…po polsku"}` – wyświetl ten tekst użytkownikowi): `rodzaj` z listy; wymagany `pesel` **albo** `budynekId`; **samym `budynekId` można zgłosić tylko `UTRATA_MIESZKANIA`** (pozostałe rodzaje wymagają PESEL – formularz powinien to uwzględnić); PESEL musi istnieć w rejestrze. Nieznany budynek w `/api/budynki/{id}` → 404.
 > 4. **Statusy zgłoszenia** w `GET /api/zgloszenia`: `NOWE` → `PRZEKAZANE` (jest u zarządu) → `ZAKONCZONE` (pole `decyzja` = POTWIERDZONE / ODRZUCONE albo `null`, gdy zgłoszenia nie trzeba było weryfikować); `BLAD_PROCESU` – nie udało się uruchomić procesu. Statusy aktualizują się asynchronicznie – odświeżaj listę (np. co kilka sekund).
