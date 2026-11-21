@@ -4,7 +4,7 @@
 |---|---|---|---|
 | **P1 – Analiza sytuacji mieszkańców** | `modele-etap2/P1_…` | ✅ zatwierdzony | ✅ `P1a_Rejestr_ludnosci`, `P1b_Analiza_sytuacji_mieszkancow`, `P1c_Rejestracja_zgloszenia` |
 | **P2 – Prognozowanie zapotrzebowania** | `modele-etap2/P2_…` | ✅ zatwierdzony | 🔧 w realizacji: `P2a_System_pogodowy`, `P2b_Prognozowanie_zapotrzebowania` |
-| **P3 – Przydział zasobów** | `modele-etap2/P3_…` | ✅ zatwierdzony | 🔧 w realizacji: `P3a_Przydzial_zasobow`, `P3b_Organizacje_humanitarne` |
+| **P3 – Przydział zasobów** | `modele-etap2/P3_…` | ✅ zatwierdzony | ✅ `P3a_Przydzial_zasobow`, `P3b_Organizacje_humanitarne` (wdrażają się na Camundzie; brakuje tylko workera zadania „Wygeneruj plan przydziału” – czeka na `/allocate` z serwisu ML) |
 | P4 – Dystrybucja zasobów | `modele-etap2/P4_…` | ⏳ czeka na akceptację | — (nie implementujemy) |
 | P5 – Obsługa sytuacji nadzwyczajnych | `modele-etap2/P5_…` | ⏳ czeka na akceptację | — (nie implementujemy) |
 
