@@ -23,6 +23,14 @@ class ProcessResourcesTest {
     }
 
     @Test
+    void modeleIFormularzeP3SaNaClasspath() throws Exception {
+        assertThat(resolver.getResources("classpath*:/bpmn/*.bpmn")).extracting(Resource::getFilename).contains(
+                "P3a_Przydzial_zasobow.bpmn", "P3b_Organizacje_humanitarne.bpmn");
+        assertThat(resolver.getResources("classpath*:/bpmn/forms/*.form")).extracting(Resource::getFilename).contains(
+                "Zatwierdz_plan_przydzialu.form", "Rozpatrz_wniosek.form");
+    }
+
+    @Test
     void modeleEtapu2NieSaWdrazane() throws Exception {
         // modele-etap2/ to tylko dokumentacja – nie wolno ich wdrażać do Camundy
         Resource[] pliki = resolver.getResources("classpath*:/bpmn/**/*.bpmn");
