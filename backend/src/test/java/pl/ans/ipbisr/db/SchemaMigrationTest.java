@@ -27,6 +27,14 @@ class SchemaMigrationTest extends PostgresJdbcTest {
     }
 
     @Test
+    void migracjaV2DodajeHarmonogramPlanu() {
+        List<String> tabele = jdbc.queryForList(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'", String.class);
+
+        assertThat(tabele).contains("plan_harmonogram");
+    }
+
+    @Test
     void zgloszenieWymagaPeselLubBudynku() {
         // Bez PESEL-u i bez budynku zgłoszenie nie wskazuje nikogo – baza ma to odrzucić
         assertThatThrownBy(() -> jdbc.update(

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /** Błędy API w jednym formacie z kontraktu: HTTP 4xx/5xx i `{"blad": "opis po polsku"}`. */
 @RestControllerAdvice
@@ -23,6 +24,12 @@ public class BledyApiHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, String>> zlyJson(HttpMessageNotReadableException e) {
         return odpowiedz(HttpStatus.BAD_REQUEST, "Nieprawidłowy format JSON");
+    }
+
+    /** Np. `/api/plany/abc` – parametr ścieżki nie jest liczbą. To błąd klienta (400), a nie serwera. */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> zlyParametr(MethodArgumentTypeMismatchException e) {
+        return odpowiedz(HttpStatus.BAD_REQUEST, "Nieprawidłowa wartość parametru „" + e.getName() + "”: " + e.getValue());
     }
 
     @ExceptionHandler(BrakZasobuException.class)

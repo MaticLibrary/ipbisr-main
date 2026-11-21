@@ -1,0 +1,20 @@
+{
+  "components": [
+    { "text": "# Wniosek o pomoc humanitarną\nCentrum kryzysowe prosi o zasoby, których brakuje w planie przydziału. Wpisz, ile organizacja przyznaje, i podaj termin dostawy.", "type": "text", "layout": { "row": "row_0", "columns": null }, "id": "t_naglowek" },
+    { "label": "Zasoby", "type": "dynamiclist", "path": "przyznanoIlosci", "isRepeating": true, "allowAddRemove": false, "showOutline": false,
+      "layout": { "row": "row_1", "columns": null }, "id": "l_zasoby",
+      "components": [
+        { "label": "Zasób", "type": "textfield", "layout": { "row": "row_l0", "columns": 4 }, "id": "f_zasob", "key": "zasob", "readonly": true },
+        { "label": "Wnioskowano", "type": "number", "layout": { "row": "row_l0", "columns": 4 }, "id": "f_wnioskowano", "key": "wnioskowano", "readonly": true },
+        { "label": "Przyznano", "type": "number", "layout": { "row": "row_l0", "columns": 4 }, "id": "f_przyznano", "key": "przyznano",
+          "validate": { "required": true, "min": 0 } }
+      ] },
+    { "subtype": "date", "dateLabel": "Termin dostawy", "type": "datetime", "layout": { "row": "row_2", "columns": null }, "id": "f_termin", "key": "termin",
+      "validate": { "required": true } }
+  ],
+  "type": "default",
+  "id": "Rozpatrz_wniosek",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "schemaVersion": 16
+}

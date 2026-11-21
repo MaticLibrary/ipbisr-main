@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Organizacje_defs" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.52.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
+<bpmn:collaboration id="Organizacje_collab"><bpmn:participant id="Pool_HUM" name="Organizacje humanitarne" processRef="Proces_Organizacje_humanitarne" /></bpmn:collaboration>
+<bpmn:process id="Proces_Organizacje_humanitarne" name="Organizacje humanitarne – rozpatrzenie wniosku" isExecutable="true">
+<bpmn:startEvent id="H_S" name="Otrzymano wniosek o pomoc"><bpmn:messageEventDefinition id="H_S_d" messageRef="Msg_Wniosek" /></bpmn:startEvent>
+<bpmn:userTask id="H_T" name="Rozpatrz wniosek i przygotuj dostawę"><bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="Rozpatrz_wniosek" /></bpmn:extensionElements></bpmn:userTask>
+<bpmn:endEvent id="H_E" name="Odpowiedź wysłana"><bpmn:extensionElements><zeebe:taskDefinition type="wyslij-odpowiedz-na-wniosek" /></bpmn:extensionElements><bpmn:messageEventDefinition id="H_E_d" /></bpmn:endEvent>
+<bpmn:sequenceFlow id="H_S_H_T" name="" sourceRef="H_S" targetRef="H_T" />
+<bpmn:sequenceFlow id="H_T_H_E" name="" sourceRef="H_T" targetRef="H_E" />
+</bpmn:process>
+<bpmn:message id="Msg_Wniosek" name="Wniosek o pomoc" />
+<bpmndi:BPMNDiagram id="Organizacje_d"><bpmndi:BPMNPlane id="Organizacje_p" bpmnElement="Organizacje_collab">
+<bpmndi:BPMNShape id="Pool_HUM_di" bpmnElement="Pool_HUM" isHorizontal="true"><dc:Bounds x="160" y="40" width="560" height="150" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="H_S_di" bpmnElement="H_S"><dc:Bounds x="272" y="97" width="36" height="36" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="H_T_di" bpmnElement="H_T"><dc:Bounds x="400" y="75" width="100" height="80" /></bpmndi:BPMNShape>
+<bpmndi:BPMNShape id="H_E_di" bpmnElement="H_E"><dc:Bounds x="592" y="97" width="36" height="36" /></bpmndi:BPMNShape>
+<bpmndi:BPMNEdge id="H_S_H_T_di" bpmnElement="H_S_H_T"><di:waypoint x="308" y="115" /><di:waypoint x="400" y="115" /></bpmndi:BPMNEdge>
+<bpmndi:BPMNEdge id="H_T_H_E_di" bpmnElement="H_T_H_E"><di:waypoint x="500" y="115" /><di:waypoint x="592" y="115" /></bpmndi:BPMNEdge>
+</bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>

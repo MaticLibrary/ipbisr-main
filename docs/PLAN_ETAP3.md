@@ -138,8 +138,10 @@ Elementy, nazwy, bramki i przepływy – **1:1 z modelu**. Dodajemy tylko to, co
 | P1c | Zarejestruj zgłoszenie | **obsługuje nasz frontend** (formularz operatora kończy to zadanie przez API) | operator |
 | P1b | Zweryfikuj zgłoszenia | dane zgłoszenia (tylko odczyt), `decyzja`: POTWIERDZONE / ODRZUCONE, `komentarz` | zarząd (Tasklist) |
 | P2b | Zweryfikuj prognozę | stara vs nowa prognoza, `zatwierdzono`, `komentarz` | analityk (Tasklist) |
-| P3a | Zatwierdź plan przydziału | podsumowanie planu, `zatwierdzono`, `komentarz` | analityk (Tasklist) |
-| P3b | Rozpatrz wniosek i przygotuj dostawę | wnioskowane ilości, `przyznanoIlosci`, `termin` | „organizacja” (na demo – my w Tasklist) |
+| P3a | Zatwierdź plan przydziału | `podsumowanie` i `podsumowaniePomocy` (tylko odczyt), `decyzja`: ZATWIERDZONY / ODRZUCONY, `komentarz` | analityk (Tasklist) |
+| P3b | Rozpatrz wniosek i przygotuj dostawę | lista `przyznanoIlosci` (zasób i `wnioskowano` – tylko odczyt, `przyznano` – do wpisania), `termin` | „organizacja” (na demo – my w Tasklist) |
+
+Odrzucenie planu: model P3 nie ma bramki po „Zatwierdź plan przydziału”, więc obsługujemy je w kodzie (`PlanService`) – plan dostaje status `ODRZUCONY`, zlecenia wydania nie powstają, decyzja trafia do audytu. Brak decyzji (automatyczne zatwierdzenie po 2 h – M5) = zatwierdzenie.
 
 ---
 
@@ -330,7 +332,9 @@ CORS dla `http://localhost:3000` włączony. Pola oznaczone `?` mogą być `null
   "harmonogram": [ { "punktId": 1, "okno": "08:00-10:00", "budynekId": 3 } ] }
 ```
 
-**`GET /api/magazyn`** → `[ { "zasob": "WODA", "ilosc": 12000.0, "jednostka": "l" } ]`; **`PUT /api/magazyn`** – wejście: ta sama lista, odpowiedź: zapisana lista.
+Uwagi do planu (M4): `status` ∈ `DO_ZATWIERDZENIA` → `ZATWIERDZONY` / `ODRZUCONY`; `zatwierdzil` = `analityk` (decyzja z formularza) albo `system` (zatwierdzenie automatyczne). `niedobory` backend **liczy z pozycji planu** (suma `potrzeba − przydzielono` po zasobie, tylko > 0), a `dostawyBezposrednie` – z rejestru potrzeb (mieszkańcy z `dostawaBezposrednia = true`). Brak planu → `GET /api/plany/ostatni` i nieznane `id` → `404 {"blad": "…"}`, `id` niebędące liczbą → `400`.
+
+**`GET /api/magazyn`** → `[ { "zasob": "WODA", "ilosc": 12000.0, "jednostka": "l" } ]`; **`PUT /api/magazyn`** – wejście: ta sama lista, odpowiedź: zapisana (aktualna) lista wszystkich zasobów. Zasoby, których nie ma w żądaniu, zostają bez zmian. Walidacja (`400` z `{"blad": "…po polsku"}`): niepusta lista, `zasob` ∈ ZYWNOSC / WODA / LEKI / HIGIENA / SCHRONIENIE, `ilosc` ≥ 0, `jednostka` niepusta. Zmiana trafia do audytu (`MAGAZYN_ZMIENIONY`).
 
 **`GET /api/procesy`** (M5) → `[ { "instancjaId": "2251799813685249", "proces": "Proces_Analiza_sytuacji", "stan": "ACTIVE", "start": "…", "operateUrl": "http://localhost:8080/operate/processes/…" } ]`
 
@@ -369,7 +373,7 @@ Tabele (Flyway):
 | `stan_magazynowy` | zasób, ilość, jednostka |
 | `zuzycie_historia` | data, dzielnica_id, zasób, ilość, cechy… |
 | `prognoza`, `prognoza_pozycja` | id, utworzono, źródło (ML / OSTATNIA_ZATWIERDZONA), różnica_proc, status · poziom (MIASTO/DZIELNICA/BUDYNEK), obiekt_id, zasób, ilość |
-| `plan_przydzialu`, `plan_pozycja` | id, prognoza_id, krytyczne_pokryte, status, zatwierdził · budynek_id, zasób, priorytet, przydzielono, potrzeba |
+| `plan_przydzialu`, `plan_pozycja`, `plan_harmonogram` | id, prognoza_id, krytyczne_pokryte, status, zatwierdził · budynek_id, zasób, priorytet, przydzielono, potrzeba · punkt_id, okno, budynek_id (`V2__harmonogram_planu.sql`) |
 | `dostawa_bezposrednia`, `wniosek_pomoc`, `zlecenie_wydania` | plan_id, pesel · zasób, ilość, przyznano · punkt_id, zasób, ilość |
 | `audyt` | czas, aktor, proces, akcja, szczegóły (JSON) – wymaganie „pełna rejestrowalność decyzji” |
 
@@ -461,7 +465,7 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 
 **Ilia**
 - [x] `GET /api/prognozy/ostatnia`, `/api/prognozy`, `/api/zuzycie/historia` (+ 11 testów: SQL na PostgreSQL i kontrakt REST)
-- [ ] *(równolegle)* `P3a`, `P3b` wykonywalne (M4)
+- [x] *(równolegle)* `P3a`, `P3b` wykonywalne (zrobione w M4)
 
 **Gotowe, gdy:** prognoza z różnicą > 30% → zadanie w Tasklist; inaczej od razu „Prognoza gotowa”.
 *Status: część Ilii (API prognoz i historii zużycia) ✅ zrobiona; czekamy na część Roberta (procesy P2, ML, workery, ekran Prognoza). `P3a`/`P3b` Ilia zrobi w M4.*
@@ -483,11 +487,38 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 - [ ] ekrany Plan przydziału + Magazyn
 
 **Ilia**
-- [ ] workery P3a/P3b ⇢ korzysta z `/allocate` Roberta
-- [ ] formularze „Zatwierdź plan przydziału”, „Rozpatrz wniosek”
-- [ ] `GET /api/plany/...`, `GET/PUT /api/magazyn`
+- [x] `P3a`, `P3b` wykonywalne (modele 1:1, wiadomości z korelacją po `idWniosku`, warunek bramki `=potrzebyKrytycznePokryte`) + smoke test wdrożenia na Camundzie
+- [x] workery: `pobierz-dane-do-przydzialu` (potrzeby z DMN „Normy dzienne”), `wyslij-wniosek-o-pomoc`, `wyslij-odpowiedz-na-wniosek`, `wyslij-zlecenia-wydania` (+ migracja `V2`, repozytoria, serwisy, testy)
+- [x] formularze „Zatwierdź plan przydziału”, „Rozpatrz wniosek i przygotuj dostawę”
+- [x] `GET /api/plany/ostatni`, `/api/plany/{id}`, `GET/PUT /api/magazyn`
+- [ ] **worker `wygeneruj-plan-przydzialu`** ⇢ czeka na `/allocate` Roberta: `MlClient` (`POST /allocate`), zapis planu (`plan_przydzialu`, `plan_pozycja`, `plan_harmonogram`), dostawy bezpośrednie, zmienne `idPlanu`, `potrzebyKrytycznePokryte`, `niedobory`, `podsumowanie`
 
 **Gotowe, gdy:** mały stan magazynu → wniosek do organizacji → odpowiedź → zatwierdzenie → „Zlecenie wydania”.
+*Status: część Ilii ✅ zrobiona **z wyjątkiem workera `wygeneruj-plan-przydzialu`** (zależy od `/allocate`). Do tego czasu proces P3a zatrzymuje się na zadaniu „Wygeneruj plan przydziału” i `GET /api/plany/ostatni` odpowiada `404`. Testy procesu P3a (każda ścieżka bramki) – M6.*
+*Sprawdzone ręcznie end-to-end na lokalnej Camundzie 8.9 (zadanie „Wygeneruj plan przydziału” zasymulowane przez REST Camundy, reszta to prawdziwe workery): (1) niepokryte potrzeby krytyczne → wniosek → P3b (zadanie „Rozpatrz wniosek”) → odpowiedź skorelowana po `idWniosku` → „Zatwierdź plan przydziału” → plan `ZATWIERDZONY`, zlecenia wydania w bazie, wpisy w audycie; (2) pokryte potrzeby krytyczne (bramka „tak”, bez wniosku) → odrzucenie planu → status `ODRZUCONY`, brak zleceń.*
+
+> **Dla Roberta (uwagi z M4 Ilii) – co jest gotowe i co robić:**
+> 1. **Gałąź:** `ilia/m4-p3` (PR do `main`). Po mergu: `git checkout main && git pull`, swoja gałąź `robert/m4-...` z aktualnego `main`.
+> 2. **`/allocate` – to jest to, na co czekam.** Backend wyśle `POST /allocate` z takim JSON-em (wszystkie ilości są **dobowe**; `priorytet` tylko `A`/`B`/`C` – osoby `WYKLUCZONY` nie mają potrzeb; w `potrzeby` są tylko pozycje > 0, ok. 600 przy 40 budynkach):
+>    ```json
+>    { "stany":     [ { "zasob": "WODA", "ilosc": 12000.0 } ],
+>      "potrzeby":  [ { "budynekId": 3, "zasob": "WODA", "priorytet": "A", "ilosc": 60.0 } ],
+>      "prognozaA": [ { "zasob": "WODA", "ilosc": 800.0 } ],
+>      "punkty":    [ { "id": 1, "przepustowoscKg": 800.0, "budynki": [1, 2] } ] }
+>    ```
+>    Oczekuję odpowiedzi:
+>    ```json
+>    { "pozycje": [ { "budynekId": 3, "zasob": "WODA", "priorytet": "A", "przydzielono": 60.0, "potrzeba": 60.0 } ],
+>      "potrzebyKrytycznePokryte": true,
+>      "harmonogram": [ { "punktId": 1, "okno": "08:00-10:00", "budynekId": 3 } ] }
+>    ```
+>    Czego **nie** potrzebuję: `niedobory` liczę sam z `pozycje` (suma `potrzeba − przydzielono`), `dostawyBezposrednie` liczę sam z rejestru potrzeb (możesz je zwracać, zignoruję). `prognozaA` bywa **pustą listą** (brak prognozy) – wtedy rezerwa = 0. Zasób bez wpisu w `prognozaA` też nie ma rezerwy. Wagi w kg na jednostkę zasobu (do ograniczenia transportu) to Twoje stałe w `ml-service` – backend ich nie wysyła. Jeśli chcesz zmienić kształt JSON-a, napisz **przed** zmianą (zasada z początku dokumentu) – dopiszę `MlClient` i worker `wygeneruj-plan-przydzialu` w kilkanaście minut po tym, jak endpoint działa.
+> 3. **P2 → P3 (Twój worker `wyslij-prognoze-gotowa`):** wiadomość musi nazywać się dokładnie **`Prognoza gotowa`**, mieć correlation key `idPrognozy` i zmienną `idPrognozy` = **numer wiersza w tabeli `prognoza`** (liczba). P3a czyta wtedy z `prognoza_pozycja` wiersze `poziom = 'MIASTO'` dla tego `id` – **Twój worker musi je zapisać dla każdego zasobu** (suma dzielnic), inaczej plan powstanie bez rezerwy. Uwaga: Zeebe dopuszcza jedną aktywną instancję procesu na jedną wartość klucza startowej wiadomości, więc `idPrognozy` musi być unikalne dla każdej prognozy.
+> 4. **Ekran Magazyn** możesz robić już teraz: `GET /api/magazyn` i `PUT /api/magazyn` (format i walidacja – sekcja 8; błędy `400` z `{"blad": "…"}` wyświetl użytkownikowi). **Ekran Plan przydziału:** `GET /api/plany/ostatni` i `/api/plany/{id}` (sekcja 8) działają, ale dopóki nie ma workera `wygeneruj-plan-przydzialu`, `/ostatni` zwraca `404` `{"blad": "Nie ma jeszcze żadnego planu przydziału"}` – ekran ma wtedy pokazać „brak planu”; do prób użyj danych-atrap o kształcie z sekcji 8. `status` planu: `DO_ZATWIERDZENIA` → `ZATWIERDZONY` / `ODRZUCONY`.
+> 5. **Gdzie jest ludzka część procesu:** zadania „Zatwierdź plan przydziału” (analityk: wybierz decyzję, opcjonalnie komentarz) i „Rozpatrz wniosek i przygotuj dostawę” (organizacja: wpisz `Przyznano` dla każdego zasobu i termin) obsługujemy w **Camunda Tasklist**, tak jak zadanie zarządu z P1.
+> 6. **Dane testowe:** P3a potrzebuje wypełnionego rejestru potrzeb (`mieszkaniec`), czyli najpierw musi zadziałać P1 (wyślij dowolne zgłoszenie z ekranu Operator). Przy pustym rejestrze worker `pobierz-dane-do-przydzialu` zgłasza zrozumiały błąd (incydent w Operate), a nie tworzy pustego planu.
+> 7. **Uruchomienie lokalne:** bez zmian względem M2 (Docker: `postgres` i `camunda`, backend `SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run`). Nowa migracja `V2` (tabela `plan_harmonogram`) wykona się sama; jeśli masz starą bazę, nic nie trzeba czyścić. Jeśli backend nie wstaje z błędem o `devDataLoader` / `/../data`, ustaw pełną ścieżkę: `IPBISR_DATA_DIR=<ścieżka do katalogu data/>`. Jeśli Camunda odpowiada `401`, odtwórz kontener: `docker compose --profile camunda rm -sfv camunda` i uruchom go ponownie.
+> 8. **Ręczne uruchomienie P3a do czasu M5** (endpointów `/api/symulacja/...` jeszcze nie ma): opublikuj wiadomość w Camundzie – `curl -u demo:demo -X POST http://localhost:8080/v2/messages/publication -H "Content-Type: application/json" -d '{"name":"Ponowne planowanie","correlationKey":"demo-1","timeToLive":60000,"variables":{}}'` (przy kolejnym uruchomieniu zmień `correlationKey`). Gdy Twój P2 działa, P3a startuje sam wiadomością „Prognoza gotowa”.
 
 ### M5 – Całość
 

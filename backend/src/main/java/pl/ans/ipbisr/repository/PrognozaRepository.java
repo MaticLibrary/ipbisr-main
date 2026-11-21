@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import pl.ans.ipbisr.api.dto.PrognozaDto;
 import pl.ans.ipbisr.api.dto.PrognozaPozycjaDto;
+import pl.ans.ipbisr.domain.IloscZasobu;
 
 /** Odczyt prognoz zapotrzebowania (zapisuje je worker P2) – na potrzeby API i ekranu „Prognoza”. */
 @Repository
@@ -36,6 +37,21 @@ public class PrognozaRepository {
     /** Historia prognoz od najnowszej, bez pozycji. */
     public List<PrognozaDto> wszystkie() {
         return jdbc.sql(NAGLOWEK + " ORDER BY id DESC").query(PrognozaRepository::mapuj).list();
+    }
+
+    /**
+     * Prognoza zapotrzebowania dla całego miasta (poziom MIASTO) – z prognozy o podanym id albo, gdy id jest null
+     * (proces ruszył od „Ponownego planowania”, a nie od „Prognozy gotowej”), z najnowszej. Brak prognozy = pusta lista.
+     */
+    public List<IloscZasobu> miasto(Long prognozaId) {
+        return jdbc.sql("""
+                        SELECT zasob, ilosc FROM prognoza_pozycja
+                        WHERE poziom = 'MIASTO'
+                          AND prognoza_id = COALESCE(CAST(:id AS BIGINT), (SELECT MAX(id) FROM prognoza))
+                        ORDER BY zasob""")
+                .param("id", prognozaId)
+                .query((rs, i) -> new IloscZasobu(rs.getString("zasob"), rs.getDouble("ilosc")))
+                .list();
     }
 
     private List<PrognozaPozycjaDto> pozycje(long prognozaId) {

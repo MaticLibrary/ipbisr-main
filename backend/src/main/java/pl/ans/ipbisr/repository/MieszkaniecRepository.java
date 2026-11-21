@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import pl.ans.ipbisr.api.dto.MieszkaniecDto;
+import pl.ans.ipbisr.domain.GrupaPotrzeb;
 import pl.ans.ipbisr.domain.WynikPriorytetu;
 
 /** Rejestr potrzeb (tabela `mieszkaniec`, wynik P1) oraz widok mieszkańców dla API. */
@@ -31,6 +32,28 @@ public class MieszkaniecRepository {
                             w.status())
                     .update();
         }
+    }
+
+    /**
+     * Grupy mieszkańców o takich samych potrzebach (budynek × priorytet × poziom potrzeb × grupa wiekowa) – wejście
+     * kroku P3 „Pobierz stany magazynowe, potrzeby i prognozy”. Pomijamy osoby, które nie żyją albo są wykluczone.
+     * Grupa wiekowa: poniżej 18 lat DZIECKO, 18–64 DOROSLY, od 65 lat SENIOR (tabela DMN „Normy dzienne” zna te trzy nazwy).
+     */
+    public List<GrupaPotrzeb> grupyPotrzeb() {
+        return jdbc.sql("""
+                SELECT m.budynek_id, m.priorytet, m.poziom_potrzeb,
+                       CASE WHEN date_part('year', age(e.data_ur)) < 18 THEN 'DZIECKO'
+                            WHEN date_part('year', age(e.data_ur)) < 65 THEN 'DOROSLY'
+                            ELSE 'SENIOR' END AS grupa_wiekowa,
+                       count(*) AS liczba
+                FROM mieszkaniec m JOIN ewidencja_ludnosci e ON e.pesel = m.pesel
+                WHERE m.status = 'ZYJE' AND m.priorytet <> 'WYKLUCZONY'
+                GROUP BY m.budynek_id, m.priorytet, m.poziom_potrzeb, grupa_wiekowa
+                ORDER BY m.budynek_id, m.priorytet, m.poziom_potrzeb, grupa_wiekowa
+                """)
+                .query((rs, i) -> new GrupaPotrzeb(rs.getInt("budynek_id"), rs.getString("priorytet"),
+                        rs.getString("poziom_potrzeb"), rs.getString("grupa_wiekowa"), rs.getInt("liczba")))
+                .list();
     }
 
     /** Lista mieszkańców dla API; priorytet i potrzeby są puste, dopóki P1 nie przeliczył danej osoby. */
