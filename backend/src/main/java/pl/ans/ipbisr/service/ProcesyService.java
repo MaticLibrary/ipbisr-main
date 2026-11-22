@@ -1,13 +1,18 @@
 package pl.ans.ipbisr.service;
 
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+
 import io.camunda.client.CamundaClient;
 import io.camunda.client.api.response.ProcessInstanceEvent;
+import io.camunda.client.api.search.response.ProcessInstance;
 import io.camunda.client.api.search.response.UserTask;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import pl.ans.ipbisr.api.dto.ProcesDto;
 
 /** Uruchamianie procesów i obsługa user tasków, które w naszym systemie klika frontend, a nie Tasklist. */
 @Service
@@ -19,10 +24,31 @@ public class ProcesyService {
     private static final int PROBY = 40;
     private static final long PAUZA_MS = 500;
 
-    private final CamundaClient camunda;
+    private static final int LIMIT_INSTANCJI = 50;
 
-    public ProcesyService(CamundaClient camunda) {
+    private final CamundaClient camunda;
+    private final String operateUrl;
+
+    /** Operate działa pod tym samym adresem co REST Camundy (lokalnie i na serwerze uczelnianym), ścieżka `/operate`. */
+    public ProcesyService(CamundaClient camunda, @Value("${camunda.client.rest-address}") String adresCamundy) {
         this.camunda = camunda;
+        this.operateUrl = adresCamundy.replaceAll("/+$", "") + "/operate/processes/";
+    }
+
+    /** Ostatnie instancje procesów (najnowsze pierwsze) z linkiem do Operate – dla ekranu „Procesy”. */
+    public List<ProcesDto> ostatnieInstancje() {
+        return camunda.newProcessInstanceSearchRequest()
+                .sort(s -> s.startDate().desc())
+                .page(p -> p.limit(LIMIT_INSTANCJI))
+                .send().join().items().stream()
+                .map(this::naDto)
+                .toList();
+    }
+
+    private ProcesDto naDto(ProcessInstance i) {
+        String klucz = String.valueOf(i.getProcessInstanceKey());
+        return new ProcesDto(klucz, i.getProcessDefinitionId(), String.valueOf(i.getState()),
+                i.getStartDate() == null ? null : ISO_OFFSET_DATE_TIME.format(i.getStartDate()), operateUrl + klucz);
     }
 
     /**
