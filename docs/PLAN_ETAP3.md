@@ -336,11 +336,13 @@ Uwagi do planu (M4): `status` ∈ `DO_ZATWIERDZENIA` → `ZATWIERDZONY` / `ODRZU
 
 **`GET /api/magazyn`** → `[ { "zasob": "WODA", "ilosc": 12000.0, "jednostka": "l" } ]`; **`PUT /api/magazyn`** – wejście: ta sama lista, odpowiedź: zapisana (aktualna) lista wszystkich zasobów. Zasoby, których nie ma w żądaniu, zostają bez zmian. Walidacja (`400` z `{"blad": "…po polsku"}`): niepusta lista, `zasob` ∈ ZYWNOSC / WODA / LEKI / HIGIENA / SCHRONIENIE, `ilosc` ≥ 0, `jednostka` niepusta. Zmiana trafia do audytu (`MAGAZYN_ZMIENIONY`).
 
-**`GET /api/procesy`** (M5) → `[ { "instancjaId": "2251799813685249", "proces": "Proces_Analiza_sytuacji", "stan": "ACTIVE", "start": "…", "operateUrl": "http://localhost:8080/operate/processes/…" } ]`
+**`GET /api/procesy`** → `[ { "instancjaId": "2251799813685249", "proces": "Proces_Analiza_sytuacji", "stan": "ACTIVE", "start": "…", "operateUrl": "http://localhost:8080/operate/processes/…" } ]`
 
-**`POST /api/symulacja/zmiana-sytuacji`**, **`/ponowne-planowanie`** (M5) – wejście `{ "poziomZagrozenia": 2 }` (opcjonalne) → `202 { "idZdarzenia": "…" }`.
+**`POST /api/symulacja/zmiana-sytuacji`**, **`/ponowne-planowanie`** – wejście `{ "poziomZagrozenia": 2 }` (opcjonalne) → `202 { "idZdarzenia": "…" }`.
 
-**`GET /api/audyt?limit=100`** (M5) → `[ { "czas": "…", "aktor": "zarzad", "proces": "P1b", "akcja": "ZWERYFIKOWANO", "szczegoly": { "decyzja": "POTWIERDZONE" } } ]`
+**`GET /api/audyt?limit=100`** → `[ { "czas": "…", "aktor": "zarzad", "proces": "P1b", "akcja": "ZWERYFIKOWANO", "szczegoly": { "decyzja": "POTWIERDZONE" } } ]`
+
+Uwagi do planu (M5): `GET /api/procesy` zwraca do 50 ostatnich instancji (najnowsze pierwsze); `start` w ISO-8601, `stan` ∈ ACTIVE / COMPLETED / TERMINATED, `operateUrl` = adres Camundy + `/operate/processes/{instancjaId}`. `GET /api/audyt`: `limit` 1–1000 (inaczej `400`), najnowsze wpisy pierwsze, `szczegoly` to obiekt (`{}` gdy brak). `POST /api/symulacja/...`: `poziomZagrozenia` 0–3 (inaczej `400`), ciało można pominąć; każdy przycisk daje nowy `idZdarzenia` (UUID) i wpis do audytu (`SYMULACJA_ZMIANY_SYTUACJI` / `SYMULACJA_PONOWNEGO_PLANOWANIA`, proces `P5`). Wiadomość „Zmiana sytuacji kryzysowej” czeka w Camundzie (TTL 1 h) na `P2b` Roberta.
 
 Endpointy oznaczone M3–M5 powstają w tych kamieniach milowych – do tego czasu frontend może użyć danych-atrap o powyższym kształcie.
 Zmianę kontraktu zgłaszam Robertowi przed wprowadzeniem (zasada z początku dokumentu).
@@ -523,8 +525,8 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 ### M5 – Całość
 
 **Ilia**
-- [ ] `/api/procesy`, `/api/audyt`, `/api/symulacja/...`
-- [ ] *(jeśli czas)* automatyczne zatwierdzanie po 1 h / 2 h
+- [x] `/api/procesy`, `/api/audyt`, `/api/symulacja/...` (+ testy: kontrakt REST, serwisy, SQL audytu na PostgreSQL)
+- [x] *(jeśli czas)* automatyczne zatwierdzanie planu po 2 h (`AutoZatwierdzanieService`) – **tylko P3a**; reguła 1 h dla prognozy P2 dojdzie razem z `P2b` Roberta
 - [ ] wdrożenie na serwer uczelniany
 
 **Robert**
@@ -532,6 +534,15 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 - [ ] dopracowanie wyglądu frontendu (skill `ui-ux-pro-max`)
 
 **Gotowe, gdy:** demo P1 → P2 → P3 od początku do końca na serwerze uczelnianym.
+*Status: część Ilii ✅ API gotowe (`/api/procesy`, `/api/audyt`, `/api/symulacja/...`) + automatyczne zatwierdzanie planu po 2 h; **wdrożenie na serwer uczelniany jeszcze przede mną** (wymaga danych dostępowych i `CAMUNDA_GRPC_ADDRESS` – patrz sekcja 12). Czekamy na część Roberta (ekrany Procesy i Audyt, wygląd).*
+
+> **Dla Roberta (uwagi z M5 Ilii) – co jest gotowe i co robić:**
+> 1. **Gałąź:** `ilia/m5-procesy-audyt-symulacja` (PR do `main`). Po mergu: `git checkout main && git pull`, swoja gałąź `robert/m5-...` z aktualnego `main`.
+> 2. **Ekran Procesy (`/procesy`):** `GET /api/procesy` → lista instancji (do 50, najnowsze pierwsze: `instancjaId`, `proces` = id procesu BPMN np. `Proces_Analiza_sytuacji`, `stan` ACTIVE / COMPLETED / TERMINATED, `start`, `operateUrl`). Pokaż `operateUrl` jako link „Otwórz w Operate” (otwiera się w nowej karcie; Operate wymaga logowania do Camundy). Odświeżaj listę co kilka sekund. Gdy Camunda jest wyłączona, API odpowiada `500` z `{"blad": …}` – wyświetl ten tekst.
+> 3. **Przyciski symulacji (na tym samym ekranie):** `POST /api/symulacja/zmiana-sytuacji` (start P2 – **Twój P2b musi mieć start event wiadomością `Zmiana sytuacji kryzysowej`**, correlation key `=idZdarzenia`) i `POST /api/symulacja/ponowne-planowanie` (start P3a – działa już teraz). Ciało `{ "poziomZagrozenia": 0–3 }` jest opcjonalne (np. pole wyboru 0–3 obok przycisków; poza zakresem → `400` z `{"blad": …}`). Odpowiedź `202 { "idZdarzenia": "…" }` – pokaż potwierdzenie „Wysłano zdarzenie”. Zmienne w wiadomości: `idZdarzenia` i (jeśli podano) `poziomZagrozenia` – P2b może je odczytać przy wywołaniu `/forecast`.
+> 4. **Ekran Audyt (`/audyt`):** `GET /api/audyt?limit=100` → `[ { czas, aktor, proces, akcja, szczegoly } ]`, najnowsze pierwsze; `szczegoly` to dowolny obiekt (pokaż np. jako tekst JSON w rozwijanym wierszu). `limit` 1–1000. Akcje: `ZAREJESTROWANO`, `ZWERYFIKOWANO`, `PRZYJETO_BEZ_WERYFIKACJI` (P1), `WNIOSEK_WYSLANY`, `ODPOWIEDZ_NA_WNIOSEK`, `ZATWIERDZONO_PLAN`, `ODRZUCONO_PLAN`, `ZATWIERDZONO_AUTOMATYCZNIE`, `MAGAZYN_ZMIENIONY` (P3) oraz `SYMULACJA_ZMIANY_SYTUACJI`, `SYMULACJA_PONOWNEGO_PLANOWANIA` (P5).
+> 5. **Automatyczne zatwierdzanie:** backend co minutę kończy zadania „Zatwierdź plan przydziału” starsze niż 2 h (wpis `ZATWIERDZONO_AUTOMATYCZNIE`, zatwierdzil = `system`). **Od Ciebie:** analogiczną regułę 1 h dla „Zweryfikuj prognozę” dopiszę, gdy `P2b` będzie w `main` – daj znać, jakie jest `id` elementu user taska i `id` procesu.
+> 6. **Wygląd (skill `ui-ux-pro-max`)** i demo na serwerze uczelnianym: po moim wdrożeniu napiszę, pod jakim adresem stoi backend (adres API we frontendzie).
 
 ### M6 – Testy (przejście do etapu 4)
 
