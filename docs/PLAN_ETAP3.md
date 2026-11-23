@@ -527,14 +527,14 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 **Ilia**
 - [x] `/api/procesy`, `/api/audyt`, `/api/symulacja/...` (+ testy: kontrakt REST, serwisy, SQL audytu na PostgreSQL)
 - [x] *(jeśli czas)* automatyczne zatwierdzanie planu po 2 h (`AutoZatwierdzanieService`) – **tylko P3a**; reguła 1 h dla prognozy P2 dojdzie razem z `P2b` Roberta
-- [ ] wdrożenie na serwer uczelniany
+- [x] połączenie i wdrożenie procesów na serwer uczelniany (tryb REST, patrz sekcja 12); pełne demo P1 → P2 → P3 dopiero po danych i `/allocate` Roberta
 
 **Robert**
 - [ ] ekrany Procesy (z przyciskami symulacji) + Audyt
 - [ ] dopracowanie wyglądu frontendu (skill `ui-ux-pro-max`)
 
 **Gotowe, gdy:** demo P1 → P2 → P3 od początku do końca na serwerze uczelnianym.
-*Status: część Ilii ✅ API gotowe (`/api/procesy`, `/api/audyt`, `/api/symulacja/...`) + automatyczne zatwierdzanie planu po 2 h; **wdrożenie na serwer uczelniany jeszcze przede mną** (wymaga danych dostępowych i `CAMUNDA_GRPC_ADDRESS` – patrz sekcja 12). Czekamy na część Roberta (ekrany Procesy i Audyt, wygląd).*
+*Status: część Ilii ✅ API gotowe (`/api/procesy`, `/api/audyt`, `/api/symulacja/...`) + automatyczne zatwierdzanie planu po 2 h; **połączenie z serwerem uczelnianym sprawdzone 2026-11-23** (tryb REST, bez portu 26500 – patrz sekcja 12); zostaje pełny przebieg demo po danych i `/allocate` Roberta. Czekamy na część Roberta (ekrany Procesy i Audyt, wygląd).*
 
 > **Dla Roberta (uwagi z M5 Ilii) – co jest gotowe i co robić:**
 > 1. **Gałąź:** `ilia/m5-procesy-audyt-symulacja` (PR do `main`). Po mergu: `git checkout main && git pull`, swoja gałąź `robert/m5-...` z aktualnego `main`.
@@ -570,6 +570,8 @@ Każdy kamień milowy kończy się działającym demo + PR. Ilia i Robert pracuj
 
 - [x] **Wersja Camundy na serwerze uczelnianym** – 8.9.0 (ustalone z topologii klastra).
 - [x] Dostęp do serwera uczelnianego – działa bez VPN.
-- [ ] **Sprawdzić połączenie backendu z serwerem uczelnianym** (odłożone po M1): dane w `.env` (`CAMUNDA_REST_ADDRESS`, `CAMUNDA_USERNAME`, `CAMUNDA_PASSWORD`),
-  nieznany jeszcze `CAMUNDA_GRPC_ADDRESS` (port 26500 – do potwierdzenia u prowadzącego albo tryb „tylko REST”). Backend dotąd testowany tylko z lokalną Camundą.
+- [x] **Połączenie backendu z serwerem uczelnianym** – sprawdzone 2026-11-23: backend wstaje, wdraża 5 procesów, 2 tabele DMN i 3 formularze i uruchamia 10 workerów (P1a/b/c, P3a/b). Nie wykonano jeszcze testowego przebiegu procesu (brak danych `data/*.csv`).
+  - **Tryb REST (zalecany):** w `.env` ustawiamy `CAMUNDA_CLIENT_PREFER_REST_OVER_GRPC=true`, wtedy workery łączą się tylko przez port **8080** (ten sam co Operate) i **nie potrzebujemy portu 26500 ani VPN-a**. Pozostałe zmienne: `CAMUNDA_REST_ADDRESS`, `CAMUNDA_USERNAME`, `CAMUNDA_PASSWORD` (można też użyć nazw `CAMUNDA_CLIENT_REST_ADDRESS`, `CAMUNDA_CLIENT_AUTH_USERNAME`, `CAMUNDA_CLIENT_AUTH_PASSWORD` – ustawiamy jeden zestaw, nie oba).
+  - **Tryb gRPC (nieużywany):** `CAMUNDA_GRPC_ADDRESS=http://<adres>:26500`; prowadzący potwierdził 2026-11-23, że port 26500 działa tylko z sieci lokalnej uczelni, akademika lub przez VPN. Z sieci domowej i z komercyjnego VPN-a port jest zamknięty (timeout).
+  - **`.env` nie jest wczytywany przez Spring** – zmienne trzeba załadować do środowiska przed `./mvnw spring-boot:run` (np. IntelliJ z EnvFile albo skrypt w PowerShellu). Jeśli `POSTGRES_PASSWORD` w `.env` zmieni się po utworzeniu bazy, trzeba odtworzyć wolumen (`docker compose down -v`), inaczej `password authentication failed`.
 - [ ] Akceptacja P4 i P5 → wtedy osobny plan.

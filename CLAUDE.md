@@ -81,8 +81,13 @@ Pracujemy na osobnych gałęziach i robimy Pull Requesty do `main`; drugi autor 
 - Adres od prowadzącego (Operate na porcie 8080), logowanie basic: login `2026_nazwisko_imie` (bez polskich znaków), hasło = numer albumu.
 - Adres, login i hasło trzymamy **tylko w `.env`** (szablon: `.env.example`).
 - Wersja Camundy na serwerze: **8.9.0** (potwierdzone przez topologię klastra: 1 broker, 1 partycja, gateway 8.9.0); `camunda-spring-boot-starter` dobieramy w wersji **8.9.x**.
-- Serwer jest dostępny **bez VPN** (sprawdzone 2026-11-17).
+- Serwer jest dostępny **bez VPN** przez REST (port 8080, sprawdzone 2026-11-17). Port gRPC 26500 działa tylko z sieci uczelni/akademika/VPN, dlatego backend łączy się w trybie REST: `CAMUNDA_CLIENT_PREFER_REST_OVER_GRPC=true` w `.env` (sprawdzone 2026-11-23, workery startują). Szczegóły: `docs/PLAN_ETAP3.md`, sekcja 12.
 - Lokalnie możemy używać Camunda 8 Run w wersji 8.9, żeby środowisko pasowało do serwera.
+- **Połączenie z serwerem uczelnianym DZIAŁA (sprawdzone 2026-11-23)** w trybie REST – nie próbuj od nowa gRPC/portu 26500 ani VPN-a. Backend wdrożył tam procesy P1a/b/c, P3a/b, DMN i formularze, wystartowało 10 workerów.
+- **Uruchomienie backendu z `.env` (Git Bash, z katalogu głównego repo):** `set -a; source .env; set +a; export SPRING_PROFILES_ACTIVE=dev IPBISR_DATA_DIR="$(pwd -W)/data"; cd backend; ./mvnw -q spring-boot:run` (Spring sam nie czyta `.env`). Wymaga działającego Dockera i `docker compose up -d postgres`.
+- Zmienne w `.env` używają nazw `CAMUNDA_CLIENT_*` (m.in. `CAMUNDA_CLIENT_PREFER_REST_OVER_GRPC=true`); nie mieszaj ich ze starymi `CAMUNDA_USERNAME` / `CAMUNDA_GRPC_ADDRESS` dla tego samego parametru. Pliku `.env` nie czytam ani nie wypisuję (hasła).
+- Typowe błędy: `Connect timed out` do 8080 = zła sieć (przełącz na hotspot/inną sieć, sprawdź `Test-NetConnection <adres> -Port 8080`); `password authentication failed for user "ipbisr"` = stary wolumen Postgresa po zmianie hasła (`docker compose down -v`, usuwa dane z bazy).
+- Do pełnego demo na serwerze brakuje jeszcze `data/*.csv` (generator Roberta) i `/allocate` (potem worker `wygeneruj-plan-przydzialu`).
 
 ## Skille Claude Code (`.claude/skills/`)
 - `git-commit` – commity w stylu Conventional Commits (typ po angielsku, np. `feat(p1):`, opis po polsku – reguła repozytorium ma pierwszeństwo),
