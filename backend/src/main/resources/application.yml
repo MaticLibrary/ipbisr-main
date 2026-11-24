@@ -1,0 +1,39 @@
+server:
+  port: ${BACKEND_PORT:8081}
+
+spring:
+  application:
+    name: ipbisr-backend
+  # Baza PostgreSQL (docker compose up -d postgres); schemat tworzy Flyway z db/migration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/${POSTGRES_DB:ipbisr}}
+    username: ${POSTGRES_USER:ipbisr}
+    password: ${POSTGRES_PASSWORD:ipbisr}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # schemat należy do Flyway – Hibernate tylko sprawdza zgodność
+    open-in-view: false
+  flyway:
+    enabled: true
+
+# Połączenie z Camundą 8.9 – domyślnie lokalna (docker compose --profile camunda up -d camunda).
+# Serwer uczelniany: adresy i dane logowania ustawiamy w .env (patrz .env.example).
+camunda:
+  client:
+    mode: self-managed
+    # Logowanie basic: lokalnie demo/demo, na serwerze uczelnianym login i hasło z .env
+    auth:
+      method: basic
+      username: ${CAMUNDA_USERNAME:demo}
+      password: ${CAMUNDA_PASSWORD:demo}
+    grpc-address: ${CAMUNDA_GRPC_ADDRESS:http://localhost:26500}
+    rest-address: ${CAMUNDA_REST_ADDRESS:http://localhost:8080}
+
+# Adres serwisu ML (używany przez workery od etapu P2/P3)
+ml-service:
+  url: ${ML_SERVICE_URL:http://localhost:8000}
+
+ipbisr:
+  # Katalog z plikami CSV (generator danych Roberta zapisuje je w data/)
+  # Profil dev (SPRING_PROFILES_ACTIVE=dev) wczytuje te pliki do bazy przy starcie
+  data-dir: ${IPBISR_DATA_DIR:../data}

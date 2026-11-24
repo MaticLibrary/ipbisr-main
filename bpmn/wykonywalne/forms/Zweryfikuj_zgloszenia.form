@@ -1,0 +1,18 @@
+{
+  "components": [
+    { "text": "# Weryfikacja zgłoszenia\nZarząd potwierdza albo odrzuca zgłoszenie od operatora punktu.", "type": "text", "layout": { "row": "row_0", "columns": null }, "id": "t_naglowek" },
+    { "label": "Rodzaj zdarzenia", "type": "textfield", "layout": { "row": "row_1", "columns": null }, "id": "f_rodzaj", "key": "zgloszenie.rodzaj", "readonly": true },
+    { "label": "PESEL", "type": "textfield", "layout": { "row": "row_1", "columns": null }, "id": "f_pesel", "key": "zgloszenie.pesel", "readonly": true },
+    { "label": "Budynek (ID)", "type": "textfield", "layout": { "row": "row_1", "columns": null }, "id": "f_budynek", "key": "zgloszenie.budynekId", "readonly": true },
+    { "label": "Opis zgłoszenia", "type": "textfield", "layout": { "row": "row_2", "columns": null }, "id": "f_opis", "key": "zgloszenie.opis", "readonly": true },
+    { "label": "Decyzja", "type": "radio", "layout": { "row": "row_3", "columns": null }, "id": "f_decyzja", "key": "decyzja",
+      "values": [ { "label": "Potwierdzam zgłoszenie", "value": "POTWIERDZONE" }, { "label": "Odrzucam zgłoszenie", "value": "ODRZUCONE" } ],
+      "validate": { "required": true } },
+    { "label": "Komentarz", "type": "textarea", "layout": { "row": "row_4", "columns": null }, "id": "f_komentarz", "key": "komentarz" }
+  ],
+  "type": "default",
+  "id": "Zweryfikuj_zgloszenia",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "schemaVersion": 16
+}

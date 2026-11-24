@@ -1,0 +1,16 @@
+{
+  "components": [
+    { "text": "# Zatwierdzenie planu przydziału\nAnalityk zatwierdza albo odrzuca plan. Zatwierdzony plan trafia jako zlecenia wydania do magazynu; odrzucony – nie.", "type": "text", "layout": { "row": "row_0", "columns": null }, "id": "t_naglowek" },
+    { "label": "Podsumowanie planu", "type": "textarea", "layout": { "row": "row_1", "columns": null }, "id": "f_podsumowanie", "key": "podsumowanie", "readonly": true },
+    { "label": "Odpowiedź organizacji humanitarnych (jeśli był wniosek)", "type": "textarea", "layout": { "row": "row_2", "columns": null }, "id": "f_pomoc", "key": "podsumowaniePomocy", "readonly": true },
+    { "label": "Decyzja", "type": "radio", "layout": { "row": "row_3", "columns": null }, "id": "f_decyzja", "key": "decyzja",
+      "values": [ { "label": "Zatwierdzam plan", "value": "ZATWIERDZONY" }, { "label": "Odrzucam plan", "value": "ODRZUCONY" } ],
+      "validate": { "required": true } },
+    { "label": "Komentarz", "type": "textarea", "layout": { "row": "row_4", "columns": null }, "id": "f_komentarz", "key": "komentarz" }
+  ],
+  "type": "default",
+  "id": "Zatwierdz_plan_przydzialu",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "schemaVersion": 16
+}

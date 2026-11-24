@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="P3_defs" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.52.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
+  <bpmn:collaboration id="P3_c">
+    <bpmn:participant id="Pool_CK3" name="Centrum kryzysowe – (Przydział zasobów)" processRef="Proces_Przydzial" />
+    <bpmn:participant id="Pool_HUM" name="Organizacje humanitarne" processRef="Proces_Pomoc" />
+    <bpmn:messageFlow id="P3_m0" name="Wniosek o pomoc" sourceRef="T3" targetRef="H_S" />
+    <bpmn:messageFlow id="P3_m1" name="Odpowiedź" sourceRef="H_E" targetRef="T4" />
+  </bpmn:collaboration>
+  <bpmn:process id="Proces_Przydzial" name="Przydział zasobów" isExecutable="true">
+    <bpmn:laneSet id="Proces_Przydzial_ls">
+      <bpmn:lane id="P3_SYS" name="System">
+        <bpmn:flowNodeRef>S1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>G1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T6</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>E1</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="P3_ANA" name="Analityk kryzysowy">
+        <bpmn:flowNodeRef>S2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T5</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="S1" name="Prognoza gotowa">
+      <bpmn:messageEventDefinition id="S1_d" />
+    </bpmn:startEvent>
+    <bpmn:startEvent id="S2" name="Ponowne planowanie">
+      <bpmn:messageEventDefinition id="S2_d" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="T1" name="Pobierz stany magazynowe, potrzeby i prognozy" />
+    <bpmn:serviceTask id="T2" name="Wygeneruj plan przydziału (algorytm optymalizacyjny)" />
+    <bpmn:exclusiveGateway id="G1" name="Potrzeby krytyczne pokryte?" />
+    <bpmn:sendTask id="T3" name="Wyślij wniosek o pomoc humanitarną" />
+    <bpmn:receiveTask id="T4" name="Odbierz odpowiedź na wniosek" />
+    <bpmn:exclusiveGateway id="J1" name="" />
+    <bpmn:userTask id="T5" name="Zatwierdź plan przydziału" />
+    <bpmn:sendTask id="T6" name="Wyślij zlecenia wydania do magazynu" />
+    <bpmn:endEvent id="E1" name="Plan przekazany" />
+    <bpmn:sequenceFlow id="S1_T1" name="" sourceRef="S1" targetRef="T1" />
+    <bpmn:sequenceFlow id="S2_T1" name="" sourceRef="S2" targetRef="T1" />
+    <bpmn:sequenceFlow id="T1_T2" name="" sourceRef="T1" targetRef="T2" />
+    <bpmn:sequenceFlow id="T2_G1" name="" sourceRef="T2" targetRef="G1" />
+    <bpmn:sequenceFlow id="G1_J1" name="tak" sourceRef="G1" targetRef="J1" />
+    <bpmn:sequenceFlow id="G1_T3" name="nie" sourceRef="G1" targetRef="T3" />
+    <bpmn:sequenceFlow id="T3_T4" name="" sourceRef="T3" targetRef="T4" />
+    <bpmn:sequenceFlow id="T4_J1" name="" sourceRef="T4" targetRef="J1" />
+    <bpmn:sequenceFlow id="J1_T5" name="" sourceRef="J1" targetRef="T5" />
+    <bpmn:sequenceFlow id="T5_T6" name="" sourceRef="T5" targetRef="T6" />
+    <bpmn:sequenceFlow id="T6_E1" name="" sourceRef="T6" targetRef="E1" />
+  </bpmn:process>
+  <bpmn:process id="Proces_Pomoc" name="Organizacje humanitarne – rozpatrzenie wniosku" isExecutable="false">
+    <bpmn:startEvent id="H_S" name="Otrzymano wniosek o pomoc">
+      <bpmn:messageEventDefinition id="H_S_d" />
+    </bpmn:startEvent>
+    <bpmn:userTask id="H_T" name="Rozpatrz wniosek i przygotuj dostawę" />
+    <bpmn:endEvent id="H_E" name="Odpowiedź wysłana">
+      <bpmn:messageEventDefinition id="H_E_d" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="H_S_H_T" name="" sourceRef="H_S" targetRef="H_T" />
+    <bpmn:sequenceFlow id="H_T_H_E" name="" sourceRef="H_T" targetRef="H_E" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="P3_d">
+    <bpmndi:BPMNPlane id="P3_p" bpmnElement="P3_c">
+      <bpmndi:BPMNShape id="Pool_CK3_di" bpmnElement="Pool_CK3" isHorizontal="true">
+        <dc:Bounds x="160" y="40" width="1820" height="300" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P3_ANA_di" bpmnElement="P3_ANA" isHorizontal="true">
+        <dc:Bounds x="190" y="190" width="1790" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P3_SYS_di" bpmnElement="P3_SYS" isHorizontal="true">
+        <dc:Bounds x="190" y="40" width="1790" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S1_di" bpmnElement="S1">
+        <dc:Bounds x="232" y="97" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S2_di" bpmnElement="S2">
+        <dc:Bounds x="392" y="247" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T1_di" bpmnElement="T1">
+        <dc:Bounds x="360" y="75" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T2_di" bpmnElement="T2">
+        <dc:Bounds x="520" y="75" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G1_di" bpmnElement="G1" isMarkerVisible="true">
+        <dc:Bounds x="705" y="90" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T3_di" bpmnElement="T3">
+        <dc:Bounds x="840" y="225" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T4_di" bpmnElement="T4">
+        <dc:Bounds x="1160" y="225" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J1_di" bpmnElement="J1" isMarkerVisible="true">
+        <dc:Bounds x="1345" y="90" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T5_di" bpmnElement="T5">
+        <dc:Bounds x="1480" y="225" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T6_di" bpmnElement="T6">
+        <dc:Bounds x="1640" y="75" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E1_di" bpmnElement="E1">
+        <dc:Bounds x="1832" y="97" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="S1_T1_di" bpmnElement="S1_T1">
+        <di:waypoint x="268" y="115" />
+        <di:waypoint x="360" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="S2_T1_di" bpmnElement="S2_T1">
+        <di:waypoint x="410" y="247" />
+        <di:waypoint x="410" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="T1_T2_di" bpmnElement="T1_T2">
+        <di:waypoint x="460" y="115" />
+        <di:waypoint x="520" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="T2_G1_di" bpmnElement="T2_G1">
+        <di:waypoint x="620" y="115" />
+        <di:waypoint x="705" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="G1_J1_di" bpmnElement="G1_J1">
+        <di:waypoint x="755" y="115" />
+        <di:waypoint x="1345" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="G1_T3_di" bpmnElement="G1_T3">
+        <di:waypoint x="730" y="140" />
+        <di:waypoint x="730" y="265" />
+        <di:waypoint x="840" y="265" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="T3_T4_di" bpmnElement="T3_T4">
+        <di:waypoint x="940" y="265" />
+        <di:waypoint x="1160" y="265" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="T4_J1_di" bpmnElement="T4_J1">
+        <di:waypoint x="1260" y="265" />
+        <di:waypoint x="1370" y="265" />
+        <di:waypoint x="1370" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="J1_T5_di" bpmnElement="J1_T5">
+        <di:waypoint x="1395" y="115" />
+        <di:waypoint x="1438" y="115" />
+        <di:waypoint x="1438" y="265" />
+        <di:waypoint x="1480" y="265" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="T5_T6_di" bpmnElement="T5_T6">
+        <di:waypoint x="1580" y="265" />
+        <di:waypoint x="1610" y="265" />
+        <di:waypoint x="1610" y="115" />
+        <di:waypoint x="1640" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="T6_E1_di" bpmnElement="T6_E1">
+        <di:waypoint x="1740" y="115" />
+        <di:waypoint x="1832" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Pool_HUM_di" bpmnElement="Pool_HUM" isHorizontal="true">
+        <dc:Bounds x="160" y="420" width="1820" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="H_S_di" bpmnElement="H_S">
+        <dc:Bounds x="872" y="477" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="H_T_di" bpmnElement="H_T">
+        <dc:Bounds x="1000" y="455" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="H_E_di" bpmnElement="H_E">
+        <dc:Bounds x="1192" y="477" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="H_S_H_T_di" bpmnElement="H_S_H_T">
+        <di:waypoint x="908" y="495" />
+        <di:waypoint x="1000" y="495" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="H_T_H_E_di" bpmnElement="H_T_H_E">
+        <di:waypoint x="1100" y="495" />
+        <di:waypoint x="1192" y="495" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="P3_m0_di" bpmnElement="P3_m0">
+        <di:waypoint x="890" y="305" />
+        <di:waypoint x="890" y="477" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="P3_m1_di" bpmnElement="P3_m1">
+        <di:waypoint x="1210" y="477" />
+        <di:waypoint x="1210" y="305" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

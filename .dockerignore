@@ -1,0 +1,14 @@
+# Kontekst budowania backendu to katalog główny repo – nie wysyłamy do Dockera zbędnych i wrażliwych rzeczy
+.git
+.env
+*.env
+!.env.example
+.idea
+.claude
+frontend
+ml-service
+docs
+**/target
+**/node_modules
+**/.next
+**/.venv

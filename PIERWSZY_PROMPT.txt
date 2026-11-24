@@ -1,0 +1,15 @@
+Przeczytaj CLAUDE.md, docs/Projekt_IPBiSR.pdf i wszystkie pliki w bpmn/.
+
+Krok 1: utwórz szkielet repozytorium zgodnie z punktem 1 „Plan pracy” w CLAUDE.md
+(foldery, docker-compose, minimalne działające backend / ml-service / frontend z /health i stroną startową, .env.example, README).
+Pokaż, jak to uruchomić, i zrób commit żeby był stworzony w git.
+
+Krok 2 (bez pisania kodu): przygotuj plan dalszej pracy:
+1) jak rozdzielić modele P2 i P3 na osobne procesy wykonywalne (tak jak P1 w bpmn/wykonywalne),
+2) jakie job type, wiadomości i correlation key będą potrzebne,
+3) jakie tabele DMN zrobimy i z jakimi kolumnami,
+4) jakie dane syntetyczne i jaki model ML do prognozy,
+5) jaki algorytm do przydziału zasobów,
+6) jakie ekrany frontendu i jakie endpointy REST.
+Pokaż plan i zaczekaj na moją akceptację. Odpowiadaj po ukraińsku.
+7)Wielki plan back i front zeby realisowac etap III
